@@ -28,3 +28,19 @@ C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\refint\vjoy_bridge.d
 C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.pdb
 C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.genruntimeconfig.cache
 C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\ref\vjoy_bridge.dll
+E:\steer_beamng\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.exe
+E:\steer_beamng\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.deps.json
+E:\steer_beamng\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.runtimeconfig.json
+E:\steer_beamng\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.dll
+E:\steer_beamng\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.pdb
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.csproj.AssemblyReference.cache
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.GeneratedMSBuildEditorConfig.editorconfig
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.AssemblyInfoInputs.cache
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.AssemblyInfo.cs
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.csproj.CoreCompileInputs.cache
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.sourcelink.json
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.dll
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\refint\vjoy_bridge.dll
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.pdb
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.genruntimeconfig.cache
+E:\steer_beamng\vjoy_bridge\obj\Release\net8.0\ref\vjoy_bridge.dll

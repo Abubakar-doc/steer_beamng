@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\vjoy_bridge\\vjoy_bridge.csproj": {}
+    "E:\\steer_beamng\\vjoy_bridge\\vjoy_bridge.csproj": {}
   },
   "projects": {
-    "C:\\vjoy_bridge\\vjoy_bridge.csproj": {
+    "E:\\steer_beamng\\vjoy_bridge\\vjoy_bridge.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\vjoy_bridge\\vjoy_bridge.csproj",
+        "projectUniqueName": "E:\\steer_beamng\\vjoy_bridge\\vjoy_bridge.csproj",
         "projectName": "vjoy_bridge",
-        "projectPath": "C:\\vjoy_bridge\\vjoy_bridge.csproj",
+        "projectPath": "E:\\steer_beamng\\vjoy_bridge\\vjoy_bridge.csproj",
         "packagesPath": "C:\\Users\\DELL 5540\\.nuget\\packages\\",
-        "outputPath": "C:\\vjoy_bridge\\obj\\",
+        "outputPath": "E:\\steer_beamng\\vjoy_bridge\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\DELL 5540\\AppData\\Roaming\\NuGet\\NuGet.Config"

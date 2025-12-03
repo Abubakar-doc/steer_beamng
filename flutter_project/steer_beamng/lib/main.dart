@@ -29,6 +29,9 @@ class _SteeringAppState extends State<SteeringApp> {
   final double maxVisualAngle = 360.0; // 2 full turns lock-to-lock
   Timer? _returnTimer;
 
+  double? _lastTouchAngle; // last pointer angle
+  bool _isDragging = false;
+
   @override
   void initState() {
     super.initState();
@@ -91,8 +94,11 @@ class _SteeringAppState extends State<SteeringApp> {
     print("Connecting to BeamNG (127.0.0.1:4444)...");
 
     try {
-      beamSocket = await Socket.connect('127.0.0.1', 4444,
-          timeout: const Duration(seconds: 2));
+      beamSocket = await Socket.connect(
+        '127.0.0.1',
+        4444,
+        timeout: const Duration(seconds: 2),
+      );
       print("CONNECTED to BeamNG!");
       beamConnected = true;
       setState(() {});
@@ -127,41 +133,69 @@ class _SteeringAppState extends State<SteeringApp> {
   }
 
   // ------------------------------------------------------
-  // UPDATE STEERING (2 turns, hard-limited)
+  // ANGLE HELPERS
   // ------------------------------------------------------
-  void _updateSteering(Offset pos, double size) {
-    // stop any return-to-center animation while user is touching
+  double _angleFromCenter(Offset pos, double size) {
+    final center = Offset(size / 2, size / 2);
+    final dx = pos.dx - center.dx;
+    final dy = pos.dy - center.dy;
+
+    double angle = math.atan2(dy, dx) * 180 / math.pi + 90;
+    if (angle > 180) angle -= 360;
+    if (angle < -180) angle += 360;
+    return angle;
+  }
+
+  double _normalizeDelta(double delta) {
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    return delta;
+  }
+
+  // ------------------------------------------------------
+  // PAN HANDLERS (grab anywhere + hard lock)
+  // ------------------------------------------------------
+  void _onPanStart(DragStartDetails d, double size) {
     _returnTimer?.cancel();
     _returnTimer = null;
 
-    final center = Offset(size / 2, size / 2);
+    _isDragging = true;
+    _lastTouchAngle = _angleFromCenter(d.localPosition, size);
+  }
 
-    double dx = pos.dx - center.dx;
-    double dy = pos.dy - center.dy;
+  void _onPanUpdate(DragUpdateDetails d, double size) {
+    if (!_isDragging || _lastTouchAngle == null) return;
 
-    double angle = math.atan2(dy, dx) * 180 / math.pi + 90;
+    final currentTouchAngle = _angleFromCenter(d.localPosition, size);
+    double delta = _normalizeDelta(currentTouchAngle - _lastTouchAngle!);
 
-    if (angle > 180) angle -= 360;
-    if (angle < -180) angle += 360;
+    double candidate = wheelDeg + delta;
+    double clamped = candidate.clamp(-maxVisualAngle, maxVisualAngle);
 
-    double delta = angle - lastAngle;
+    // if we are at limit and still pushing further in same direction, ignore
+    bool pushingBeyondMax =
+        (wheelDeg >= maxVisualAngle && delta > 0) ||
+            (wheelDeg <= -maxVisualAngle && delta < 0);
 
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
+    if (!pushingBeyondMax) {
+      wheelDeg = clamped;
+      lastAngle = wheelDeg;
+      steeringValue = (wheelDeg / maxVisualAngle).clamp(-1.0, 1.0);
 
-    double newAngle =
-    (lastAngle + delta).clamp(-maxVisualAngle, maxVisualAngle);
+      setState(() {});
 
-    lastAngle = newAngle;
-
-    double steering = (newAngle / maxVisualAngle).clamp(-1.0, 1.0);
-
-    setState(() {
-      wheelDeg = newAngle;
-      steeringValue = steering;
       sendToVJoy(steeringValue);
       sendSteer(steeringValue);
-    });
+    }
+
+    // always update lastTouchAngle so finger can keep moving without snapping
+    _lastTouchAngle = currentTouchAngle;
+  }
+
+  void _onPanEnd() {
+    _isDragging = false;
+    _lastTouchAngle = null;
+    _startReturnToCenter();
   }
 
   // ------------------------------------------------------
@@ -182,7 +216,6 @@ class _SteeringAppState extends State<SteeringApp> {
       currentStep++;
       final tNorm = currentStep / steps; // 0..1
 
-      // ease out (fast at start, slow near center)
       final ease = 1.0 - math.pow(1.0 - tNorm, 2);
 
       final angle = startAngle * (1.0 - ease);
@@ -193,9 +226,10 @@ class _SteeringAppState extends State<SteeringApp> {
         wheelDeg = angle;
         lastAngle = angle;
         steeringValue = steering;
-        sendToVJoy(steeringValue);
-        sendSteer(steeringValue);
       });
+
+      sendToVJoy(steeringValue);
+      sendSteer(steeringValue);
 
       if (currentStep >= steps) {
         t.cancel();
@@ -204,9 +238,9 @@ class _SteeringAppState extends State<SteeringApp> {
           wheelDeg = 0;
           lastAngle = 0;
           steeringValue = 0;
-          sendToVJoy(0);
-          sendSteer(0);
         });
+        sendToVJoy(0);
+        sendSteer(0);
       }
     });
   }
@@ -242,16 +276,18 @@ class _SteeringAppState extends State<SteeringApp> {
                     children: [
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                            vjoyConnected ? Colors.green : Colors.red),
+                          backgroundColor:
+                          vjoyConnected ? Colors.green : Colors.red,
+                        ),
                         onPressed: () => connectVJoyServer(),
                         child: const Text("Reconnect vJoy"),
                       ),
                       const SizedBox(width: 15),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                            beamConnected ? Colors.green : Colors.red),
+                          backgroundColor:
+                          beamConnected ? Colors.green : Colors.red,
+                        ),
                         onPressed: () => connectBeamNG(),
                         child: const Text("Reconnect BeamNG"),
                       ),
@@ -263,11 +299,9 @@ class _SteeringAppState extends State<SteeringApp> {
                   // STEERING WHEEL
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onPanStart: (d) => _updateSteering(d.localPosition, size),
-                    onPanUpdate: (d) => _updateSteering(d.localPosition, size),
-                    onPanEnd: (_) {
-                      _startReturnToCenter();
-                    },
+                    onPanStart: (d) => _onPanStart(d, size),
+                    onPanUpdate: (d) => _onPanUpdate(d, size),
+                    onPanEnd: (_) => _onPanEnd(),
                     child: Container(
                       color: Colors.transparent,
                       width: size,
@@ -277,8 +311,7 @@ class _SteeringAppState extends State<SteeringApp> {
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border:
-                            Border.all(width: 8, color: Colors.white),
+                            border: Border.all(width: 8, color: Colors.white),
                           ),
                           child: Stack(
                             alignment: Alignment.center,
@@ -289,7 +322,9 @@ class _SteeringAppState extends State<SteeringApp> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: Colors.white, width: 3),
+                                    color: Colors.white,
+                                    width: 3,
+                                  ),
                                 ),
                               ),
                               Positioned(
@@ -299,8 +334,7 @@ class _SteeringAppState extends State<SteeringApp> {
                                   height: size * 0.3,
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius:
-                                    BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                               ),
@@ -315,13 +349,17 @@ class _SteeringAppState extends State<SteeringApp> {
 
                   Text(
                     "Angle: ${wheelDeg.toStringAsFixed(1)}°",
-                    style:
-                    const TextStyle(color: Colors.white, fontSize: 22),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                    ),
                   ),
                   Text(
                     "Steering: ${steeringValue.toStringAsFixed(3)}",
                     style: const TextStyle(
-                        color: Colors.greenAccent, fontSize: 22),
+                      color: Colors.greenAccent,
+                      fontSize: 22,
+                    ),
                   ),
                 ],
               ),

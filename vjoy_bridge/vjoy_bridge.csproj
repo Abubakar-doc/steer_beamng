@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="vJoyInterface">
+      <HintPath>C:\Program Files\vJoy\x64\vJoyInterface.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

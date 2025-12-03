@@ -1,0 +1,30 @@
+C:\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.exe
+C:\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.deps.json
+C:\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.runtimeconfig.json
+C:\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.dll
+C:\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.pdb
+C:\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.csproj.AssemblyReference.cache
+C:\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.GeneratedMSBuildEditorConfig.editorconfig
+C:\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.AssemblyInfoInputs.cache
+C:\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.AssemblyInfo.cs
+C:\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.csproj.CoreCompileInputs.cache
+C:\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.dll
+C:\vjoy_bridge\obj\Release\net8.0\refint\vjoy_bridge.dll
+C:\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.pdb
+C:\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.genruntimeconfig.cache
+C:\vjoy_bridge\obj\Release\net8.0\ref\vjoy_bridge.dll
+C:\Users\DELL 5540\Documents\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.exe
+C:\Users\DELL 5540\Documents\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.deps.json
+C:\Users\DELL 5540\Documents\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.runtimeconfig.json
+C:\Users\DELL 5540\Documents\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.dll
+C:\Users\DELL 5540\Documents\vjoy_bridge\bin\Release\net8.0\vjoy_bridge.pdb
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.csproj.AssemblyReference.cache
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.AssemblyInfoInputs.cache
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.AssemblyInfo.cs
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.csproj.CoreCompileInputs.cache
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.dll
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\refint\vjoy_bridge.dll
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.pdb
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\vjoy_bridge.genruntimeconfig.cache
+C:\Users\DELL 5540\Documents\vjoy_bridge\obj\Release\net8.0\ref\vjoy_bridge.dll

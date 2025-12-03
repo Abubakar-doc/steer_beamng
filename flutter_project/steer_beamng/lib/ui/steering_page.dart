@@ -16,6 +16,7 @@ class Console extends GetView<SteeringController> {
           builder: (ctx, constraints) {
             final size =
                 math.min(constraints.maxWidth, constraints.maxHeight) * 0.6;
+            final pedalHeight = constraints.maxHeight * 0.7;
 
             return Stack(
               children: [
@@ -26,8 +27,8 @@ class Console extends GetView<SteeringController> {
                   child: Obx(
                         () => IconButton(
                       icon: controller.vjoyConnected.value
-                          ? const Icon(Icons.usb, color: Colors.green)
-                          : const Icon(Icons.usb_off, color: Colors.red),
+                          ? const Icon(Icons.wifi, color: Colors.green)
+                          : const Icon(Icons.wifi_off_outlined, color: Colors.red),
                       iconSize: 34,
                       onPressed: controller.connectVJoyServer,
                       tooltip: "Reconnect vJoy",
@@ -62,32 +63,49 @@ class Console extends GetView<SteeringController> {
                   ),
                 ),
 
-                // accel / brake 2-in-1 vertical pedal (right side)
+                // accel / brake pedal PNG (right-center, springs back)
                 Positioned(
-                  right: 16,
+                  right: 24,
                   bottom: 16,
-                  child: Container(
-                    width: 80,
-                    height: constraints.maxHeight * 0.7,
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white24, width: 1),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Center(
-                      child: Obx(
-                            () => RotatedBox(
-                          quarterTurns: 3, // horizontal slider -> vertical
-                          child: Slider(
-                            value: controller.pedal.value,
-                            min: -1.0, // full brake
-                            max: 1.0,  // full accel
-                            onChanged: controller.onPedalChanged,
-                            activeColor: Colors.greenAccent,
-                            inactiveColor: Colors.grey.shade700,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanStart: (_) => controller.onPedalPanStart(),
+                    onPanUpdate: (d) =>
+                        controller.onPedalPanUpdate(d, pedalHeight),
+                    onPanEnd: (_) => controller.onPedalPanEnd(),
+                    child: SizedBox(
+                      width: 80,
+                      height: pedalHeight,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // track / background
+                          Container(
+                            width: 10,
+                            height: pedalHeight,
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white24,
+                                width: 1,
+                              ),
+                            ),
                           ),
-                        ),
+                          // pedal image moving up/down
+                          Obx(
+                                () => Align(
+                              // pedal.value: -1 (brake, bottom) .. 0 .. 1 (accel, top)
+                              alignment:
+                              Alignment(0, -controller.pedal.value),
+                              child: Image.asset(
+                                AssetsHelper.pedal,
+                                height: 150,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

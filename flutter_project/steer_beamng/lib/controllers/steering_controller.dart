@@ -10,13 +10,16 @@ class SteeringController extends GetxController {
   final wheelDeg = 0.0.obs;
   final steeringValue = 0.0.obs;
   final lastAngle = 0.0.obs;
-  final pedal = 0.0.obs; // -1 = full brake, 0 = neutral, 1 = full accel
+
+  // -1 = full brake, 0 = neutral, 1 = full accel
+  final pedal = 0.0.obs;
 
   final vjoyConnected = false.obs;
   final beamConnected = false.obs;
 
   final double maxVisualAngle = 360.0; // 2 full turns
   Timer? _returnTimer;
+  Timer? _pedalReturnTimer;
 
   double? _lastTouchAngle;
   bool _isDragging = false;
@@ -24,7 +27,7 @@ class SteeringController extends GetxController {
   Socket? vjoySocket;
   Socket? beamSocket;
 
-  // send throttling
+  // send throttling (steering)
   double _lastSentSteer = 0.0;
   DateTime _lastSendTime = DateTime.fromMillisecondsSinceEpoch(0);
   static const int _minSendIntervalMs = 10; // ~100 Hz
@@ -40,6 +43,7 @@ class SteeringController extends GetxController {
   @override
   void onClose() {
     _returnTimer?.cancel();
+    _pedalReturnTimer?.cancel();
     vjoySocket?.destroy();
     beamSocket?.destroy();
     super.onClose();
@@ -61,7 +65,7 @@ class SteeringController extends GetxController {
       vjoyConnected.value = true;
 
       vjoySocket!.listen(
-        (data) {},
+            (data) {},
         onDone: () {
           vjoyConnected.value = false;
           vjoySocket = null;
@@ -89,7 +93,7 @@ class SteeringController extends GetxController {
       beamConnected.value = true;
 
       beamSocket!.listen(
-        (data) {},
+            (data) {},
         onDone: () {
           beamConnected.value = false;
           beamSocket = null;
@@ -104,7 +108,7 @@ class SteeringController extends GetxController {
     }
   }
 
-  // single throttled send for both bridges
+  // ---------------- steering send (throttled) ----------------
   void _sendSteering(double value) {
     final now = DateTime.now();
     if ((value - _lastSentSteer).abs() < _eps &&
@@ -117,7 +121,7 @@ class SteeringController extends GetxController {
 
     if (vjoySocket != null) {
       final safe = value.toStringAsFixed(6);
-      vjoySocket!.write("$safe\n");
+      vjoySocket!.write("$safe\n"); // plain line = steering for your C# server
     }
     if (beamSocket != null) {
       beamSocket!.write('{"steering": $value}\n');
@@ -142,7 +146,7 @@ class SteeringController extends GetxController {
     return delta;
   }
 
-  // ---------------- gesture handlers ----------------
+  // ---------------- steering gesture handlers ----------------
   void onPanStart(DragStartDetails d, double size) {
     _returnTimer?.cancel();
     _returnTimer = null;
@@ -162,7 +166,7 @@ class SteeringController extends GetxController {
 
     bool pushingBeyondMax =
         (wheelDeg.value >= maxVisualAngle && delta > 0) ||
-        (wheelDeg.value <= -maxVisualAngle && delta < 0);
+            (wheelDeg.value <= -maxVisualAngle && delta < 0);
 
     if (!pushingBeyondMax) {
       wheelDeg.value = clamped;
@@ -182,16 +186,15 @@ class SteeringController extends GetxController {
     startReturnToCenter();
   }
 
-  // ---------------- return to center ----------------
+  // ---------------- steering return to center ----------------
   void startReturnToCenter() {
     _returnTimer?.cancel();
 
     final startAngle = wheelDeg.value;
     const int steps = 20;
     const duration = Duration(milliseconds: 400);
-    final stepDuration = Duration(
-      milliseconds: duration.inMilliseconds ~/ steps,
-    );
+    final stepDuration =
+    Duration(milliseconds: duration.inMilliseconds ~/ steps);
 
     int currentStep = 0;
 
@@ -222,13 +225,84 @@ class SteeringController extends GetxController {
     });
   }
 
+  // ==========================================================
+  //                        PEDAL
+  // ==========================================================
+
+  // main pedal apply + SEND to vJoy / Beam
+  void _applyPedal(double v) {
+    pedal.value = v.clamp(-1.0, 1.0);
+
+    final throttle = pedal.value > 0 ? pedal.value : 0.0;
+    final brake    = pedal.value < 0 ? -pedal.value : 0.0;
+
+    _sendPedal(throttle, brake);
+
+    if (beamSocket != null) {
+      beamSocket!.write(
+        '{"throttle": $throttle, "brake": $brake}\n',
+      );
+    }
+  }
+
+  // optional direct change (if ever used with a Slider)
   void onPedalChanged(double v) {
-    pedal.value = v;
+    _applyPedal(v);
+  }
 
-    final throttle = v > 0 ? v : 0.0;
-    final brake    = v < 0 ? -v : 0.0;
+  void onPedalPanStart() {
+    _pedalReturnTimer?.cancel();
+    _pedalReturnTimer = null;
+  }
 
-    // TODO: send to vJoy/BeamNG
-    // print('thr=$throttle brk=$brake');
+  void onPedalPanUpdate(DragUpdateDetails d, double height) {
+    final y = d.localPosition.dy.clamp(0, height);
+    final half = height / 2;
+    // map: top = +1, middle = 0, bottom = -1
+    final v = (half - y) / half;
+    _applyPedal(v);
+  }
+
+  void onPedalPanEnd() {
+    _startPedalReturn();
+  }
+
+  void _startPedalReturn() {
+    _pedalReturnTimer?.cancel();
+
+    final start = pedal.value;
+    if (start == 0) return;
+
+    const duration = Duration(milliseconds: 120);
+    const steps = 20;
+    final stepDuration =
+    Duration(milliseconds: duration.inMilliseconds ~/ steps);
+
+    int i = 0;
+    _pedalReturnTimer = Timer.periodic(stepDuration, (t) {
+      i++;
+      final tNorm = i / steps;
+      final ease = 1.0 - math.pow(1.0 - tNorm, 2);
+      final v = start * (1.0 - ease);
+
+      _applyPedal(v.toDouble());
+
+      if (i >= steps) {
+        t.cancel();
+        _pedalReturnTimer = null;
+        _applyPedal(0.0);
+      }
+    });
+  }
+
+  // send pedal to vJoy: THR:x / BRK:x (0..1)
+  void _sendPedal(double throttle, double brake) {
+    if (vjoySocket == null) return;
+
+    final thr = throttle.clamp(0.0, 1.0).toStringAsFixed(3);
+    final brk = brake.clamp(0.0, 1.0).toStringAsFixed(3);
+
+    vjoySocket!.write("THR:$thr\n");
+    vjoySocket!.write("BRK:$brk\n");
   }
 }

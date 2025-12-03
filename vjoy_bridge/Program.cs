@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Globalization;
 using vJoyInterfaceWrap;
 
 class Program
@@ -35,7 +36,7 @@ class Program
         {
             Console.WriteLine("Waiting for client...");
             var client = listener.AcceptTcpClient();
-            client.NoDelay = true;                    // 👈 disable Nagle for this client
+            client.NoDelay = true;
             Console.WriteLine("Client connected.");
 
             var stream = client.GetStream();
@@ -47,14 +48,15 @@ class Program
                 while (true)
                 {
                     int bytes = stream.Read(buffer, 0, buffer.Length);
-                    if (bytes <= 0) break;           // disconnected
+                    if (bytes <= 0) break; // disconnected
 
                     bufferStr += Encoding.UTF8.GetString(buffer, 0, bytes);
 
                     int newlineIndex;
                     double? lastSteer = null;
+                    double? lastThrottle = null;
+                    double? lastBrake = null;
 
-                    // parse all lines we currently have, but only APPLY the last one
                     while ((newlineIndex = bufferStr.IndexOf('\n')) != -1)
                     {
                         string line = bufferStr.Substring(0, newlineIndex).Trim();
@@ -63,24 +65,60 @@ class Program
                         if (string.IsNullOrWhiteSpace(line))
                             continue;
 
+                        // THR:0.75  -> throttle 0..1
+                        if (line.StartsWith("THR:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var valStr = line.Substring(4);
+                            if (double.TryParse(valStr, NumberStyles.Float,
+                                CultureInfo.InvariantCulture, out double thr))
+                            {
+                                lastThrottle = Math.Clamp(thr, 0.0, 1.0);
+                            }
+                            continue;
+                        }
+
+                        // BRK:0.40  -> brake 0..1
+                        if (line.StartsWith("BRK:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var valStr = line.Substring(4);
+                            if (double.TryParse(valStr, NumberStyles.Float,
+                                CultureInfo.InvariantCulture, out double brk))
+                            {
+                                lastBrake = Math.Clamp(brk, 0.0, 1.0);
+                            }
+                            continue;
+                        }
+
+                        // plain number -> steering
                         if (double.TryParse(
                                 line,
-                                System.Globalization.NumberStyles.Float,
-                                System.Globalization.CultureInfo.InvariantCulture,
+                                NumberStyles.Float,
+                                CultureInfo.InvariantCulture,
                                 out double steer))
                         {
                             lastSteer = Math.Clamp(steer, -1.0, 1.0);
                         }
                     }
 
+                    // apply latest steering
                     if (lastSteer.HasValue)
                     {
-                        // only set once per burst
-                        int axisValue = (int)((lastSteer.Value + 1.0) * 16383.5);
+                        int axisValue = (int)((lastSteer.Value + 1.0) * 16383.5); // -1..1 -> 0..32767
                         vJoy.SetAxis(axisValue, id, HID_USAGES.HID_USAGE_X);
+                    }
 
-                        // keep logging VERY light or remove entirely
-                        // Console.WriteLine($"steer={lastSteer.Value:F3} axis={axisValue}");
+                    // apply latest throttle (0..1 -> 0..32767) on Slider 0
+                    if (lastThrottle.HasValue)
+                    {
+                        int thrAxis = (int)(lastThrottle.Value * 32767.0);
+                        vJoy.SetAxis(thrAxis, id, HID_USAGES.HID_USAGE_SL0);
+                    }
+
+                    // apply latest brake (0..1 -> 0..32767) on Slider 1
+                    if (lastBrake.HasValue)
+                    {
+                        int brkAxis = (int)(lastBrake.Value * 32767.0);
+                        vJoy.SetAxis(brkAxis, id, HID_USAGES.HID_USAGE_SL1);
                     }
                 }
             }

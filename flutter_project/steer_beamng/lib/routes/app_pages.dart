@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:steer_beamng/constants/routes_helper.dart';
-import '../ui/steering_page.dart';
+import '../ui/console.dart';
 import '../ui/steering_binding.dart';
 
 class AppPages {

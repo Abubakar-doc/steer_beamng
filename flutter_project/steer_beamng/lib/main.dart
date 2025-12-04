@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:steer_beamng/bindings/console_binding.dart';
 import 'constants/routes_helper.dart';
 import 'routes/app_pages.dart';
 
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
       title: 'Steering Wheel',
       debugShowCheckedModeBanner: false,
       initialRoute: Routes.steering,
+      initialBinding: ConsoleBinding(),
       getPages: AppPages.routes,
     );
   }

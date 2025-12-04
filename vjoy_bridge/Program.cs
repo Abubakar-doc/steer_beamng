@@ -9,35 +9,37 @@ class Program
 {
     static void Main()
     {
-        Console.WriteLine("vJoy TCP Server starting...");
+        Console.WriteLine("=== vJoy Bridge Starting ===");
 
+        // ---------------- vJoy Init ----------------
         if (!vJoy.vJoyEnabled())
         {
-            Console.WriteLine("vJoy NOT enabled. Exiting.");
+            Console.WriteLine("vJoy NOT enabled!");
             return;
         }
 
         uint id = 1;
-        var status = vJoy.GetVJDStatus(id);
-        Console.WriteLine("vJoy Device 1 status: " + status);
-
         if (!vJoy.AcquireVJD(id))
         {
-            Console.WriteLine("Failed to acquire vJoy device 1.");
+            Console.WriteLine("Failed to acquire VJoy ID 1");
             return;
         }
 
+        Console.WriteLine("vJoy OK!");
+
+        // ---------------- TCP Listener ----------------
         var listener = new TcpListener(IPAddress.Any, 5000);
-        listener.Server.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
         listener.Start();
-        Console.WriteLine("Listening on port 5000...");
+
+        Console.WriteLine("Server listening on TCP :5000");
 
         while (true)
         {
             Console.WriteLine("Waiting for client...");
             var client = listener.AcceptTcpClient();
             client.NoDelay = true;
-            Console.WriteLine("Client connected.");
+
+            Console.WriteLine("Client connected!");
 
             var stream = client.GetStream();
             byte[] buffer = new byte[256];
@@ -48,77 +50,71 @@ class Program
                 while (true)
                 {
                     int bytes = stream.Read(buffer, 0, buffer.Length);
-                    if (bytes <= 0) break; // disconnected
+                    if (bytes <= 0) break;
 
                     bufferStr += Encoding.UTF8.GetString(buffer, 0, bytes);
 
-                    int newlineIndex;
-                    double? lastSteer = null;
-                    double? lastThrottle = null;
-                    double? lastBrake = null;
+                    int newline;
+                    double? steer = null;
+                    double? thr = null;
+                    double? brk = null;
 
-                    while ((newlineIndex = bufferStr.IndexOf('\n')) != -1)
+                    while ((newline = bufferStr.IndexOf('\n')) != -1)
                     {
-                        string line = bufferStr.Substring(0, newlineIndex).Trim();
-                        bufferStr = bufferStr.Substring(newlineIndex + 1);
+                        string line = bufferStr[..newline].Trim();
+                        bufferStr = bufferStr[(newline + 1)..];
 
-                        if (string.IsNullOrWhiteSpace(line))
-                            continue;
+                        if (line.Length == 0) continue;
 
-                        // THR:0.75  -> throttle 0..1
-                        if (line.StartsWith("THR:", StringComparison.OrdinalIgnoreCase))
+                        // PING
+                        if (line == "PING")
                         {
-                            var valStr = line.Substring(4);
-                            if (double.TryParse(valStr, NumberStyles.Float,
-                                CultureInfo.InvariantCulture, out double thr))
-                            {
-                                lastThrottle = Math.Clamp(thr, 0.0, 1.0);
-                            }
+                            byte[] pong = Encoding.UTF8.GetBytes("PONG\n");
+                            stream.Write(pong, 0, pong.Length);
                             continue;
                         }
 
-                        // BRK:0.40  -> brake 0..1
-                        if (line.StartsWith("BRK:", StringComparison.OrdinalIgnoreCase))
+                        // THROTTLE
+                        if (line.StartsWith("THR:"))
                         {
-                            var valStr = line.Substring(4);
-                            if (double.TryParse(valStr, NumberStyles.Float,
-                                CultureInfo.InvariantCulture, out double brk))
-                            {
-                                lastBrake = Math.Clamp(brk, 0.0, 1.0);
-                            }
+                            if (double.TryParse(line[4..], NumberStyles.Float,
+                                CultureInfo.InvariantCulture, out double v))
+                                thr = Math.Clamp(v, 0, 1);
                             continue;
                         }
 
-                        // plain number -> steering
-                        if (double.TryParse(
-                                line,
-                                NumberStyles.Float,
-                                CultureInfo.InvariantCulture,
-                                out double steer))
+                        // BRAKE
+                        if (line.StartsWith("BRK:"))
                         {
-                            lastSteer = Math.Clamp(steer, -1.0, 1.0);
+                            if (double.TryParse(line[4..], NumberStyles.Float,
+                                CultureInfo.InvariantCulture, out double v))
+                                brk = Math.Clamp(v, 0, 1);
+                            continue;
                         }
+
+                        // STEERING
+                        if (double.TryParse(line, NumberStyles.Float,
+                            CultureInfo.InvariantCulture, out double s))
+                            steer = Math.Clamp(s, -1, 1);
                     }
 
-                    // apply latest steering
-                    if (lastSteer.HasValue)
+                    // ---------------- Apply Inputs to vJoy ----------------
+                    if (steer.HasValue)
                     {
-                        int axisValue = (int)((lastSteer.Value + 1.0) * 16383.5); // -1..1 -> 0..32767
-                        vJoy.SetAxis(axisValue, id, HID_USAGES.HID_USAGE_X);
+                        int axis = (int)((steer.Value + 1) * 16383.5);
+                        vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_X);
                     }
 
-                    // apply latest throttle (0..1 -> 0..32767) on Slider 0
-                    if (lastThrottle.HasValue)
+                    if (thr.HasValue)
                     {
-                        int thrAxis = (int)(lastThrottle.Value * 32767.0);
-                        vJoy.SetAxis(thrAxis, id, HID_USAGES.HID_USAGE_SL0);
+                        int axis = (int)(thr.Value * 32767);
+                        vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_SL0);
                     }
 
-                    // apply latest brake (0..1 -> 0..32767) on Slider 1
-                    if (lastBrake.HasValue)
+                    if (brk.HasValue)
                     {
-                        int brkAxis = (int)(lastBrake.Value * 32767.0);
-                        vJoy.SetAxis(brkAxis, id, HID_USAGES.HID_USAGE_SL1);
+                        int axis = (int)(brk.Value * 32767);
+                        vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_SL1);
                     }
                 }
             }

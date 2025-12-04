@@ -1,10 +1,15 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:steer_beamng/constants/assets_helper.dart';
-import '../controllers/steering_controller.dart';
+import 'package:steer_beamng/controllers/console_controller.dart';
+import 'package:steer_beamng/ui/widgets/gear_count_dropdown.dart';
+import 'package:steer_beamng/ui/widgets/manual_gearbox_widget.dart';
+import 'package:steer_beamng/ui/widgets/pedal_widget.dart';
+import 'package:steer_beamng/ui/widgets/steering_angle_dropdown.dart';
+import 'package:steer_beamng/ui/widgets/steering_wheel_widget.dart';
+import 'package:steer_beamng/ui/widgets/wifi_status_widget.dart';
 
-class Console extends GetView<SteeringController> {
+class Console extends GetView<ConsoleController> {
   const Console({super.key});
 
   @override
@@ -13,104 +18,46 @@ class Console extends GetView<SteeringController> {
       child: Scaffold(
         backgroundColor: Colors.black,
         body: LayoutBuilder(
-          builder: (ctx, constraints) {
-            final size =
-                math.min(constraints.maxWidth, constraints.maxHeight) * 0.6;
-            final pedalHeight = constraints.maxHeight * 0.7;
+          builder: (ctx, c) {
+            final size = math.min(c.maxWidth, c.maxHeight) * 0.6;
+            final pedalH = c.maxHeight * 0.8;
 
             return Stack(
               children: [
-                // vJoy reconnect icon (top-right)
                 Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Obx(
-                    () => IconButton(
-                      icon: controller.vjoyConnected.value
-                          ? const Icon(Icons.wifi, color: Colors.green)
-                          : const Icon(
-                              Icons.wifi_off_outlined,
-                              color: Colors.red,
-                            ),
-                      iconSize: 34,
-                      onPressed: controller.connectVJoyServer,
-                      tooltip: "Reconnect vJoy",
-                    ),
-                  ),
+                  top: 10,
+                  left: 10,
+                  child: WifiStatusWidget(controller),
                 ),
 
-                // steering wheel (bottom-left)
+                Positioned(
+                  top: 10,
+                  left: 120,
+                  child: SteeringAngleDropdown(controller),
+                ),
+
                 Positioned(
                   left: 16,
                   bottom: 16,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onPanStart: (d) => controller.onPanStart(d, size),
-                    onPanUpdate: (d) => controller.onPanUpdate(d, size),
-                    onPanEnd: (_) => controller.onPanEnd(),
-                    child: Obx(
-                      () => SizedBox(
-                        width: size,
-                        height: size,
-                        child: Transform.rotate(
-                          angle: controller.wheelDeg.value * math.pi / 180,
-                          child: Image.asset(
-                            AssetsHelper.steering,
-                            width: size,
-                            height: size,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: SteeringWheelWidget(controller, size),
                 ),
 
-                // accel / brake pedal PNG (right-center, springs back)
                 Positioned(
                   right: 24,
-                  bottom: 16,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onPanStart: (_) => controller.onPedalPanStart(),
-                    onPanUpdate: (d) =>
-                        controller.onPedalPanUpdate(d, pedalHeight),
-                    onPanEnd: (_) => controller.onPedalPanEnd(),
-                    child: SizedBox(
-                      width: 80,
-                      height: pedalHeight,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // track / background
-                          Container(
-                            width: 10,
-                            height: pedalHeight,
-                            decoration: BoxDecoration(
-                              color: Colors.white10,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white24,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                          // pedal image moving up/down
-                          Obx(
-                            () => Align(
-                              // pedal.value: -1 (brake, bottom) .. 0 .. 1 (accel, top)
-                              alignment: Alignment(0, -controller.pedal.value),
-                              child: Image.asset(
-                                AssetsHelper.pedal,
-                                height: 150,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  bottom: 24,
+                  child: PedalWidget(controller, pedalH),
+                ),
+
+                Positioned(
+                  top: 10,
+                  left: 200,
+                  child: GearCountDropdown(controller),
+                ),
+
+                Positioned(
+                  right: 100,
+                  bottom: 100,
+                  child: ManualGearboxWidget(controller, 180),
                 ),
               ],
             );

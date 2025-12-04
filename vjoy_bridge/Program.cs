@@ -19,9 +19,17 @@ class Program
         }
 
         uint id = 1;
+        VjdStat status = vJoy.GetVJDStatus(id);
+
+        if (status != VjdStat.VJD_STAT_FREE && status != VjdStat.VJD_STAT_OWN)
+        {
+            Console.WriteLine("vJoy device not free!");
+            return;
+        }
+
         if (!vJoy.AcquireVJD(id))
         {
-            Console.WriteLine("Failed to acquire VJoy ID 1");
+            Console.WriteLine("Failed to acquire vJoy ID 1");
             return;
         }
 
@@ -58,7 +66,9 @@ class Program
                     double? steer = null;
                     double? thr = null;
                     double? brk = null;
+                    int? gear = null;
 
+                    // ----------- Parse lines -----------
                     while ((newline = bufferStr.IndexOf('\n')) != -1)
                     {
                         string line = bufferStr[..newline].Trim();
@@ -71,6 +81,14 @@ class Program
                         {
                             byte[] pong = Encoding.UTF8.GetBytes("PONG\n");
                             stream.Write(pong, 0, pong.Length);
+                            continue;
+                        }
+
+                        // STEERING raw float (-1 to 1)
+                        if (double.TryParse(line, NumberStyles.Float,
+                            CultureInfo.InvariantCulture, out double s))
+                        {
+                            steer = Math.Clamp(s, -1, 1);
                             continue;
                         }
 
@@ -92,13 +110,17 @@ class Program
                             continue;
                         }
 
-                        // STEERING
-                        if (double.TryParse(line, NumberStyles.Float,
-                            CultureInfo.InvariantCulture, out double s))
-                            steer = Math.Clamp(s, -1, 1);
+                        // GEAR
+                        if (line.StartsWith("GEAR:"))
+                        {
+                            if (int.TryParse(line[5..], out int g))
+                                gear = g;
+                            continue;
+                        }
                     }
 
-                    // ---------------- Apply Inputs to vJoy ----------------
+                    // ----------- Apply to vJoy -----------
+
                     if (steer.HasValue)
                     {
                         int axis = (int)((steer.Value + 1) * 16383.5);
@@ -115,6 +137,19 @@ class Program
                     {
                         int axis = (int)(brk.Value * 32767);
                         vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_SL1);
+                    }
+
+                    // ----- GEAR BUTTONS (1–10) -----
+                    if (gear.HasValue)
+                    {
+                        int g = Math.Clamp(gear.Value, 1, 10);
+
+                        // clear previous gear
+                        for (uint b = 1; b <= 10; b++)
+                            vJoy.SetBtn(false, id, b);
+
+                        // press new gear
+                        vJoy.SetBtn(true, id, (uint)g);
                     }
                 }
             }

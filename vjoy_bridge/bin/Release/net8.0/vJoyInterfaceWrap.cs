@@ -3,7 +3,15 @@ using System.Runtime.InteropServices;
 
 namespace vJoyInterfaceWrap
 {
-    public enum VjdStat { VJD_STAT_OWN, VJD_STAT_FREE, VJD_STAT_BUSY, VJD_STAT_MISS, VJD_STAT_UNKN };
+    public enum VjdStat
+    {
+        VJD_STAT_OWN,
+        VJD_STAT_FREE,
+        VJD_STAT_BUSY,
+        VJD_STAT_MISS,
+        VJD_STAT_UNKN
+    };
+
     public enum HID_USAGES : uint
     {
         HID_USAGE_X = 0x30,
@@ -27,10 +35,14 @@ namespace vJoyInterfaceWrap
         [DllImport("vJoyInterface.dll", EntryPoint = "RelinquishVJD")]
         public static extern void RelinquishVJD(uint rID);
 
+        [DllImport("vJoyInterface.dll", EntryPoint = "GetVJDStatus")]
+        public static extern VjdStat GetVJDStatus(uint rID);
+
         [DllImport("vJoyInterface.dll", EntryPoint = "SetAxis")]
         public static extern bool SetAxis(int Value, uint rID, HID_USAGES Axis);
 
-        [DllImport("vJoyInterface.dll", EntryPoint = "GetVJDStatus")]
-        public static extern VjdStat GetVJDStatus(uint rID);
+        // ⭐ REQUIRED FOR GEARS ⭐
+        [DllImport("vJoyInterface.dll", EntryPoint = "SetBtn")]
+        public static extern bool SetBtn(bool Value, uint rID, uint ButtonNumber);
     }
 }

@@ -9,6 +9,7 @@
       "dependencies": [
         "cupertino_icons",
         "flutter",
+        "fluttertoast",
         "get"
       ],
       "devDependencies": [
@@ -39,6 +40,15 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "fluttertoast",
+      "version": "9.0.0",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "web"
       ]
     },
     {
@@ -159,6 +169,13 @@
       "name": "web",
       "version": "1.1.1",
       "dependencies": []
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
     },
     {
       "name": "sky_engine",

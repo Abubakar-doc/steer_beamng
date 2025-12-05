@@ -13,7 +13,16 @@ class GearboxService {
   // Track drag movement
   void onDrag(Offset pos, Size size) {
     lastDrag = pos;
+
+    int snap = _detectGear(pos, size);
+
+    // Update UI immediately
+    currentGear.value = snap;
+
+    // Send gear instantly
+    sendGear(_convertGearToVJoy(snap));
   }
+
 
   // Commit gear selection at end of drag
   void onDragEnd(Size size) {

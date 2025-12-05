@@ -9,7 +9,7 @@ class Program
 {
     static void Main()
     {
-        Console.WriteLine("=== vJoy Bridge Starting ===");
+        Console.WriteLine("=== vJoy Bridge Starting (UDP) ===");
 
         // ---------------- vJoy Init ----------------
         if (!vJoy.vJoyEnabled())
@@ -35,132 +35,137 @@ class Program
 
         Console.WriteLine("vJoy OK!");
 
-        // ---------------- TCP Listener ----------------
-        var listener = new TcpListener(IPAddress.Any, 5000);
-        listener.Start();
+        // ---------------- UDP Listener ----------------
+        UdpClient udp = new UdpClient(5000);
+        Console.WriteLine("Server listening on UDP :5000");
 
-        Console.WriteLine("Server listening on TCP :5000");
+        IPEndPoint remote = new IPEndPoint(IPAddress.Any, 0);
+
+        bool clientConnected = false;
+        DateTime lastPacket = DateTime.MinValue;
 
         while (true)
         {
-            Console.WriteLine("Waiting for client...");
-            var client = listener.AcceptTcpClient();
-            client.NoDelay = true;
-
-            Console.WriteLine("Client connected!");
-
-            var stream = client.GetStream();
-            byte[] buffer = new byte[256];
-            string bufferStr = "";
-
             try
             {
-                while (true)
+                // ---- RECEIVE PACKET ----
+                byte[] data = udp.Receive(ref remote);
+                string msg = Encoding.UTF8.GetString(data).Trim();
+
+                // ---- CONNECT STATUS ----
+                if (!clientConnected)
                 {
-                    int bytes = stream.Read(buffer, 0, buffer.Length);
-                    if (bytes <= 0) break;
+                    clientConnected = true;
+                    Console.WriteLine($"CLIENT CONNECTED: {remote.Address}:{remote.Port}");
+                }
 
-                    bufferStr += Encoding.UTF8.GetString(buffer, 0, bytes);
+                lastPacket = DateTime.Now;
 
-                    int newline;
-                    double? steer = null;
-                    double? thr = null;
-                    double? brk = null;
-                    int? gear = null;
+                // ---- DISCONNECT CHECK ----
+                if ((DateTime.Now - lastPacket).TotalSeconds > 2 && clientConnected)
+                {
+                    clientConnected = false;
+                    Console.WriteLine("CLIENT DISCONNECTED");
+                }
 
-                    // ----------- Parse lines -----------
-                    while ((newline = bufferStr.IndexOf('\n')) != -1)
-                    {
-                        string line = bufferStr[..newline].Trim();
-                        bufferStr = bufferStr[(newline + 1)..];
+                double? steer = null;
+                double? thr = null;
+                double? brk = null;
+                int? gear = null;
 
-                        if (line.Length == 0) continue;
+                // ---------------- Parse ----------------
+                if (msg == "PING")
+                {
+                    byte[] pong = Encoding.UTF8.GetBytes("PONG");
+                    udp.Send(pong, pong.Length, remote);
+                    continue;
+                }
 
-                        // PING
-                        if (line == "PING")
-                        {
-                            byte[] pong = Encoding.UTF8.GetBytes("PONG\n");
-                            stream.Write(pong, 0, pong.Length);
-                            continue;
-                        }
+                // Steering raw float
+                if (double.TryParse(msg, NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out double s))
+                {
+                    steer = Math.Clamp(s, -1, 1);
+                }
 
-                        // STEERING raw float (-1 to 1)
-                        if (double.TryParse(line, NumberStyles.Float,
-                            CultureInfo.InvariantCulture, out double s))
-                        {
-                            steer = Math.Clamp(s, -1, 1);
-                            continue;
-                        }
+                // THROTTLE
+                if (msg.StartsWith("THR:"))
+                {
+                    if (double.TryParse(msg[4..], NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out double v))
+                        thr = Math.Clamp(v, 0, 1);
+                }
 
-                        // THROTTLE
-                        if (line.StartsWith("THR:"))
-                        {
-                            if (double.TryParse(line[4..], NumberStyles.Float,
-                                CultureInfo.InvariantCulture, out double v))
-                                thr = Math.Clamp(v, 0, 1);
-                            continue;
-                        }
+                // BRAKE
+                if (msg.StartsWith("BRK:"))
+                {
+                    if (double.TryParse(msg[4..], NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out double v))
+                        brk = Math.Clamp(v, 0, 1);
+                }
 
-                        // BRAKE
-                        if (line.StartsWith("BRK:"))
-                        {
-                            if (double.TryParse(line[4..], NumberStyles.Float,
-                                CultureInfo.InvariantCulture, out double v))
-                                brk = Math.Clamp(v, 0, 1);
-                            continue;
-                        }
+                // GEAR
+                if (msg.StartsWith("GEAR:"))
+                {
+                    if (int.TryParse(msg[5..], out int g))
+                        gear = g;
+                }
 
-                        // GEAR
-                        if (line.StartsWith("GEAR:"))
-                        {
-                            if (int.TryParse(line[5..], out int g))
-                                gear = g;
-                            continue;
-                        }
-                    }
+                // HANDBRAKE (button 11)
+if (msg.StartsWith("HB:"))
+{
+    if (int.TryParse(msg[3..], out int hb))
+    {
+        bool pressed = hb == 1;
 
-                    // ----------- Apply to vJoy -----------
+        // Set vJoy button #11
+        vJoy.SetBtn(pressed, id, 11);
+        continue;
+    }
+}
 
-                    if (steer.HasValue)
-                    {
-                        int axis = (int)((steer.Value + 1) * 16383.5);
-                        vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_X);
-                    }
 
-                    if (thr.HasValue)
-                    {
-                        int axis = (int)(thr.Value * 32767);
-                        vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_SL0);
-                    }
+                // ---------------- Apply to vJoy ----------------
 
-                    if (brk.HasValue)
-                    {
-                        int axis = (int)(brk.Value * 32767);
-                        vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_SL1);
-                    }
+                if (steer.HasValue)
+                {
+                    int axis = (int)((steer.Value + 1) * 16383.5);
+                    vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_X);
+                }
 
-                    // ----- GEAR BUTTONS (1–10) -----
-                    if (gear.HasValue)
-                    {
-                        int g = Math.Clamp(gear.Value, 1, 10);
+                if (thr.HasValue)
+                {
+                    int axis = (int)(thr.Value * 32767);
+                    vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_SL0);
+                }
 
-                        // clear previous gear
-                        for (uint b = 1; b <= 10; b++)
-                            vJoy.SetBtn(false, id, b);
+                if (brk.HasValue)
+                {
+                    int axis = (int)(brk.Value * 32767);
+                    vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_SL1);
+                }
 
-                        // press new gear
-                        vJoy.SetBtn(true, id, (uint)g);
-                    }
+                // ----- GEAR BUTTONS (1–10) -----
+                if (gear.HasValue)
+                {
+                    int g = Math.Clamp(gear.Value, 1, 10);
+
+                    for (uint b = 1; b <= 10; b++)
+                        vJoy.SetBtn(false, id, b);
+
+                    vJoy.SetBtn(true, id, (uint)g);
+                }
+
+                // ---- DISCONNECT CHECK AGAIN (post processing) ----
+                if ((DateTime.Now - lastPacket).TotalSeconds > 2 && clientConnected)
+                {
+                    clientConnected = false;
+                    Console.WriteLine("CLIENT DISCONNECTED");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Client error: " + ex.Message);
-            }
-            finally
-            {
-                Console.WriteLine("Client disconnected.");
-                client.Close();
+                Console.WriteLine("UDP error: " + ex.Message);
             }
         }
     }

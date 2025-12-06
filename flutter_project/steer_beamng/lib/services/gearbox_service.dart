@@ -14,12 +14,6 @@ class GearboxService {
 
   final visualOffset = Offset.zero.obs;
 
-  int lastVibratedGear = 999;
-
-  // Debounce vibration for stability
-  DateTime lastVibrationTime = DateTime.now();
-  static const vibrationCooldown = Duration(milliseconds: 120);
-
   GearboxService(this.sendGear);
 
   // -------------------------
@@ -33,9 +27,6 @@ class GearboxService {
 
     // compute offset so knob syncs to finger
     dragOffset = fingerStart - knobStart;
-
-    // reset vibration state
-    lastVibratedGear = currentGear.value;
   }
 
   // -------------------------
@@ -57,15 +48,6 @@ class GearboxService {
     if (snap != currentGear.value) {
       currentGear.value = snap;
       sendGear(_convertGearToVJoy(snap));
-
-      // Debounced vibration
-      final now = DateTime.now();
-      if (now.difference(lastVibrationTime) > vibrationCooldown &&
-          snap != lastVibratedGear) {
-        vibrateForGear(snap);
-        lastVibratedGear = snap;
-        lastVibrationTime = now;
-      }
     }
   }
 
@@ -74,9 +56,6 @@ class GearboxService {
   // -------------------------
   void endDrag(Size s) {
     visualOffset.value = Offset.zero;
-
-    // reset vibration system next drag
-    lastVibratedGear = 999;
   }
 
   // ----------------------------------------------------------
@@ -135,10 +114,14 @@ class GearboxService {
     final top = s.height * 0.22;
     final bottom = s.height * 0.78;
 
+    // Strong neutral zone
+    final neutralTop = top + 40;
+    final neutralBottom = bottom - 40;
+
     final slots = _slotMap(s);
     const snapRadius = 75.0;
 
-    // closest gear
+    // 1) Look for closest gear
     int bestGear = 999;
     double bestDist = double.infinity;
 
@@ -150,105 +133,21 @@ class GearboxService {
       }
     });
 
-    // movement direction
-    bool movingDown = p.dy > lastFingerPos.dy;
-    bool movingUp = p.dy < lastFingerPos.dy;
-
-    // ⭐ EXPANDED SNAP for gears in direction of travel
-    if (movingDown && bestDist <= snapRadius * 1.8) return bestGear;
-    if (movingUp && bestDist <= snapRadius * 1.8) return bestGear;
-
-    // ⭐ normal snap
-    if (bestDist <= snapRadius) return bestGear;
-
-    // neutral zone (weakened)
-    final neutralTop = top + 70;
-    final neutralBottom = bottom - 70;
+    // 2) Neutral is allowed ONLY inside central Y band
     bool inNeutralY = p.dy > neutralTop && p.dy < neutralBottom;
 
-    if (inNeutralY) return 0;
+    // 3) If in neutral zone and NOT very close → NEUTRAL
+    if (inNeutralY && bestDist > snapRadius * 0.6) {
+      return 0;
+    }
 
+    // 4) Else if close to a gear → snap
+    if (bestDist <= snapRadius) {
+      return bestGear;
+    }
+
+    // 5) fallback
     return 0;
-  }
-
-
-  // ----------------------------------------------------------
-  // VIBRATION MAP (Optimized)
-  // ----------------------------------------------------------
-  Future<void> vibrateForGear(int gear) async {
-    if (!(await Vibration.hasVibrator() ?? false)) return;
-
-    const S = 80;   // short
-    const L = 220;  // long
-    const gap = 70;
-
-    List<int> p = [0];
-
-    void pulse(int d) {
-      p.add(d);
-      p.add(gap);
-    }
-
-    switch (gear) {
-      case 0:   // Neutral
-        // pulse(S);
-        break;
-
-      case -1:  // Reverse
-        pulse(L);
-        pulse(L);
-        break;
-
-      case 1:
-        pulse(S);
-        break;
-
-      case 2:
-        pulse(S);
-        pulse(S);
-        break;
-
-      case 3:   // L-S
-        pulse(L);
-        pulse(S);
-        break;
-
-      case 4:   // S-S-L
-        pulse(S);
-        pulse(S);
-        pulse(L);
-        break;
-
-      case 5:   // S-L-S
-        pulse(S);
-        pulse(L);
-        pulse(S);
-        break;
-
-      case 6:   // S-S-S
-        pulse(S);
-        pulse(S);
-        pulse(S);
-        break;
-
-      case 7:   // L-L-S
-        pulse(L);
-        pulse(L);
-        pulse(S);
-        break;
-
-      case 8:   // L-S-S-L
-        pulse(L);
-        pulse(S);
-        pulse(S);
-        pulse(L);
-        break;
-
-      default:
-        pulse(S);
-    }
-
-    Vibration.vibrate(pattern: p);
   }
 
 

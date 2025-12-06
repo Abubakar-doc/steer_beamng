@@ -125,4 +125,47 @@ class ConsoleController extends GetxController {
       ToastUtils.infoToast("Connecting…");
     }
   }
+
+  void sendAction(String action, {bool holdStart = false, bool holdEnd = false}) {
+    final normalized = action.toUpperCase().trim();
+
+    // allowed actions
+    const valid = {
+      "FIX",
+      "FLIP",
+      "MODE",
+      "IGN",
+      "FOG",
+      "HEAD",
+      "HORN",
+      "LEFT",
+      "HAZ",
+      "RIGHT",
+      "DIFF",
+      "ESC",
+      "4WD",
+    };
+
+    if (!valid.contains(normalized)) {
+      print("Unknown action: $action");
+      return;
+    }
+
+    // ----- HOLD START -----
+    if (holdStart) {
+      udp.send("ACT_HOLD_START:$normalized");
+      return;
+    }
+
+    // ----- HOLD END -----
+    if (holdEnd) {
+      udp.send("ACT_HOLD_END:$normalized");
+      return;
+    }
+
+    // ----- NORMAL TAP -----
+    udp.send("ACT:$normalized");
+  }
+
+
 }

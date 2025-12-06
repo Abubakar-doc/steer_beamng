@@ -124,6 +124,75 @@ if (msg.StartsWith("HB:"))
     }
 }
 
+// ACTION BUTTONS
+if (msg.StartsWith("ACT:"))
+{
+    string action = msg[4..].ToUpperInvariant();
+
+    int button = action switch
+    {
+        "FIX"  => 12,
+        "FLIP" => 13,
+        "MODE" => 14,
+        "IGN"  => 15,
+        "FOG"  => 16,
+        "HEAD" => 17,
+        "HORN" => 18,
+        "LEFT" => 19,
+        "HAZ"  => 20,
+        "RIGHT"=> 21,
+        "DIFF" => 22,
+        "ESC"  => 23,
+        "4WD"  => 24,
+        _ => 0
+    };
+
+    if (button != 0)
+    {
+        vJoy.SetBtn(true, id, (uint)button);
+
+        // momentary press (50–80ms feels good)
+        System.Threading.Thread.Sleep(60);
+
+        vJoy.SetBtn(false, id, (uint)button);
+    }
+
+    continue;
+}
+
+// ----- HOLD START -----
+if (msg.StartsWith("ACT_HOLD_START:"))
+{
+    string action = msg["ACT_HOLD_START:".Length..].ToUpperInvariant();
+    uint button = action switch
+    {
+        "FIX" => 12,
+        "IGN" => 15,
+        _ => 0
+    };
+
+    if (button != 0)
+        vJoy.SetBtn(true, id, button); // keep holding
+
+    continue;
+}
+
+// ----- HOLD END -----
+if (msg.StartsWith("ACT_HOLD_END:"))
+{
+    string action = msg["ACT_HOLD_END:".Length..].ToUpperInvariant();
+    uint button = action switch
+    {
+        "FIX" => 12,
+        "IGN" => 15,
+        _ => 0
+    };
+
+    if (button != 0)
+        vJoy.SetBtn(false, id, button); // release
+
+    continue;
+}
 
                 // ---------------- Apply to vJoy ----------------
 

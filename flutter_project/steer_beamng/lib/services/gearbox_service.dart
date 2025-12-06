@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:vibration/vibration.dart';
 
 class GearboxService {
-  final currentGear = 0.obs;     // -1 = R, 0 = N, 1–8 = forward
+  final currentGear = 0.obs; // -1 = R, 0 = N, 1–8 = forward
   final availableGears = 5.obs;
   final Function(int) sendGear;
 
@@ -70,8 +69,8 @@ class GearboxService {
   // vJoy gear mapping
   // ----------------------------------------------------------
   int _convertGearToVJoy(int gear) {
-    if (gear == 0) return 10;  // Neutral
-    if (gear == -1) return 9;  // Reverse
+    if (gear == 0) return 10; // Neutral
+    if (gear == -1) return 9; // Reverse
     return gear;
   }
 
@@ -84,8 +83,10 @@ class GearboxService {
     if (gearCount % 2 == 0) colCount++;
 
     double step = 1 / (colCount + 1);
-    List<double> cols =
-    List.generate(colCount, (i) => s.width * (step * (i + 1)));
+    List<double> cols = List.generate(
+      colCount,
+      (i) => s.width * (step * (i + 1)),
+    );
 
     final top = s.height * 0.22;
     final bottom = s.height * 0.78;
@@ -150,9 +151,7 @@ class GearboxService {
     return 0;
   }
 
-
   void setAvailableGears(int count) {
     availableGears.value = count.clamp(1, 8);
   }
-
 }

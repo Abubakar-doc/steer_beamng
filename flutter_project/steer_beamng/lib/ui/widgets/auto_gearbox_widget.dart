@@ -20,45 +20,48 @@ class AutoGearboxWidget extends StatelessWidget {
 
         final knobPos = _gearPos(gear);
 
-        return Container(
-          width: 70,
-          height: height,
-          color: Colors.black,
-          child: Stack(
-            children: [
-              // RAIL
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _AutoRailPainter(),
-                ),
-              ),
-
-              // GEAR LABELS
-              ..._buildLabels(),
-
-              // KNOB
-              Positioned(
-                left: 35 - knobSize / 2,
-                top: knobPos - knobSize / 2,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 80),
-                  width: knobSize,
-                  height: knobSize,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      )
-                    ],
+        return Padding(
+          padding: const EdgeInsets.only(right: 20.0),
+          child: Container(
+            width: 70,
+            height: height,
+            color: Colors.black,
+            child: Stack(
+              children: [
+                // RAIL
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _AutoRailPainter(),
                   ),
                 ),
-              ),
-            ],
+
+                // GEAR LABELS
+                ..._buildLabels(),
+
+                // KNOB
+                Positioned(
+                  left: 35 - knobSize / 2,
+                  top: knobPos - knobSize / 2,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 80),
+                    width: knobSize,
+                    height: knobSize,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }),

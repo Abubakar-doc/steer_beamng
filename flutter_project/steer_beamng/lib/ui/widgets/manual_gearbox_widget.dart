@@ -12,118 +12,69 @@ class ManualGearboxWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onPanStart: (d) =>
-          controller.gearbox.onDrag(d.localPosition, Size(size, size)),
+          controller.gearbox.startDrag(d.localPosition, Size(size, size)),
+
       onPanUpdate: (d) =>
-          controller.gearbox.onDrag(d.localPosition, Size(size, size)),
-      onPanEnd: (_) => controller.gearbox.onDragEnd(Size(size, size)),
+          controller.gearbox.updateDrag(d.localPosition, Size(size, size)),
+
+      onPanEnd: (_) => controller.gearbox.endDrag(Size(size, size)),
+
       child: Obx(() {
         final gear = controller.gearbox.currentGear.value;
+        final knobPos = controller.gearbox.getKnobPos(Size(size, size));
+        final offset = controller.gearbox.visualOffset.value;
+
         final knobSize = size * 0.18;
         final gearCount = controller.selectedGearCount.value;
 
-        final knobPos = _gearPosition(gear, size, gearCount);
-        final colCount = _getColumnCount(gearCount);
-
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
+        return Transform.translate(
+          offset: -offset, // ⭐ shifts whole gearbox
+          child: Container(
+            width: size,
+            height: size,
             color: Colors.black,
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              CustomPaint(
-                size: Size(size, size),
-                painter: _HPatternPainter(gearCount),
-              ),
+            child: Stack(
+              children: [
+                CustomPaint(
+                  size: Size(size, size),
+                  painter: _HPatternPainter(gearCount),
+                ),
 
-              _buildGearLabels(size, gearCount),
+                _buildGearLabels(size, gearCount),
 
-              Positioned(
-                left: knobPos.dx - knobSize / 2,
-                top: knobPos.dy - knobSize / 2,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 80),
-                  width: knobSize,
-                  height: knobSize,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.45),
-                        blurRadius: 6,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                Positioned(
+                  left: knobPos.dx - knobSize / 2,
+                  top: knobPos.dy - knobSize / 2,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 60),
+                    width: knobSize,
+                    height: knobSize,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 3),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       }),
     );
   }
 
-  // -----------------------------
-  // COLUMN COUNT LOGIC YOU WANTED
-  // -----------------------------
-  int _getColumnCount(int gearCount) {
-    int col = (gearCount / 2).ceil();
-    bool lastOdd = gearCount % 2 == 1;
-
-    if (!lastOdd) return col + 1; // Even number → add R column
-    return col; // Odd number → R stays under last column
-  }
-
-  List<double> _getCols(int colCount, double w) {
-    List<double> cols = [];
-    double step = 1 / (colCount + 1);
-
-    for (int i = 1; i <= colCount; i++) {
-      cols.add(w * (step * i));
-    }
-
-    return cols;
-  }
-
-  // -----------------------------
-  // KNOB POSITION LOGIC
-  // -----------------------------
-  Offset _gearPosition(int gear, double size, int gearCount) {
-    final top = size * 0.22;
-    final mid = size * 0.50;
-    final bottom = size * 0.78;
-
-    int colCount = _getColumnCount(gearCount);
-    List<double> cols = _getCols(colCount, size);
-
-    if (gear == 0) return Offset(cols[colCount ~/ 2], mid);
-
-    if (gear == -1) return Offset(cols.last, bottom);
-
-    int index = ((gear - 1) ~/ 2);
-    if (index >= cols.length) index = cols.length - 1;
-
-    double x = cols[index];
-    double y = gear.isOdd ? top : bottom;
-
-    return Offset(x, y);
-  }
-
-  // -----------------------------
-  // LABELS
-  // -----------------------------
   Widget _buildGearLabels(double size, int gearCount) {
     final top = size * 0.05;
     final bottom = size * 0.88;
 
-    int colCount = _getColumnCount(gearCount);
-    List<double> cols = _getCols(colCount, size);
+    int colCount = (gearCount / 2).ceil();
+    if (gearCount % 2 == 0) colCount++;
+
+    double step = 1 / (colCount + 1);
+    List<double> cols =
+    List.generate(colCount, (i) => size * (step * (i + 1)));
+
     List<Widget> labels = [];
 
     for (int col = 0; col < colCount; col++) {
@@ -134,7 +85,8 @@ class ManualGearboxWidget extends StatelessWidget {
         labels.add(Positioned(
           left: cols[col] - 10,
           top: top,
-          child: _label("$odd"),
+          child: Text("$odd",
+              style: const TextStyle(color: Colors.white, fontSize: 22)),
         ));
       }
 
@@ -142,31 +94,23 @@ class ManualGearboxWidget extends StatelessWidget {
         labels.add(Positioned(
           left: cols[col] - 10,
           top: bottom,
-          child: _label("$even"),
+          child: Text("$even",
+              style: const TextStyle(color: Colors.white, fontSize: 22)),
         ));
       } else if (col == colCount - 1) {
         labels.add(Positioned(
           left: cols[col] - 10,
           top: bottom,
-          child: _label("R"),
+          child: const Text("R",
+              style: TextStyle(color: Colors.white, fontSize: 22)),
         ));
       }
     }
 
     return Stack(children: labels);
   }
-
-  Widget _label(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
 }
+
 
 class _HPatternPainter extends CustomPainter {
   final int gearCount;

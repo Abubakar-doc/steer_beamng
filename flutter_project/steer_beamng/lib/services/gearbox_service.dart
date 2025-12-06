@@ -1,75 +1,112 @@
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:vibration/vibration.dart';
 
 class GearboxService {
-  final currentGear = 0.obs;       // -1 = R, 0 = N, 1–8 forward gears
-  final availableGears = 5.obs;    // forward gears only
-  final Function(int) sendGear;    // sends vJoy-compatible gear value
+  final currentGear = 0.obs;     // -1 = R, 0 = N, 1–8 = forward
+  final availableGears = 5.obs;
+  final Function(int) sendGear;
 
-  Offset lastDrag = Offset.zero;
+  Offset lastFingerPos = Offset.zero;
+  Offset fingerStart = Offset.zero;
+  Offset knobStart = Offset.zero;
+  Offset dragOffset = Offset.zero;
+
+  final visualOffset = Offset.zero.obs;
+
+  int lastVibratedGear = 999;
+
+  // Debounce vibration for stability
+  DateTime lastVibrationTime = DateTime.now();
+  static const vibrationCooldown = Duration(milliseconds: 120);
 
   GearboxService(this.sendGear);
 
-  // Track drag movement
-  void onDrag(Offset pos, Size size) {
-    lastDrag = pos;
+  // -------------------------
+  // USER TOUCHES SCREEN
+  // -------------------------
+  void startDrag(Offset finger, Size s) {
+    fingerStart = finger;
 
-    int snap = _detectGear(pos, size);
+    // knob's true world-position
+    knobStart = getKnobPos(s);
 
-    // Update UI immediately
-    currentGear.value = snap;
+    // compute offset so knob syncs to finger
+    dragOffset = fingerStart - knobStart;
 
-    // Send gear instantly
-    sendGear(_convertGearToVJoy(snap));
+    // reset vibration state
+    lastVibratedGear = currentGear.value;
   }
 
+  // -------------------------
+  // USER DRAGS
+  // -------------------------
+  void updateDrag(Offset finger, Size s) {
+    lastFingerPos = finger;
 
-  // Commit gear selection at end of drag
-  void onDragEnd(Size size) {
-    int snap = _detectGear(lastDrag, size);
-    currentGear.value = snap;
+    // move gearbox UI visually
+    visualOffset.value = finger - dragOffset;
 
-    // ⭐ SEND VJOY VALUE
-    sendGear(_convertGearToVJoy(snap));
-  }
+    // simulated knob coordinates
+    Offset simulated = finger - dragOffset;
 
-  // ----------------------------------------------------------
-  // vJOY MAPPING
-  // ----------------------------------------------------------
-  // R = 9
-  // N = 10
-  // 1–8 = 1–8
-  int _convertGearToVJoy(int gear) {
-    if (gear == 0) return 10;  // Neutral → 10
-    if (gear == -1) return 9;  // Reverse → 9
-    return gear;               // Forward gears stay the same
-  }
+    // detect nearest gear or neutral
+    int snap = _detectGear(simulated, s);
 
-  // ----------------------------------------------------------
-  // GRID COLUMN LOGIC (matches UI 100%)
-  // ----------------------------------------------------------
-  int _getColumnCount(int gearCount) {
-    int base = (gearCount / 2).ceil();  // pairs → columns
-    bool lastOdd = gearCount % 2 == 1;  // 5,7 → odd → R shares last col
-    return lastOdd ? base : base + 1;   // even count → add R column
-  }
+    // only update when actual change
+    if (snap != currentGear.value) {
+      currentGear.value = snap;
+      sendGear(_convertGearToVJoy(snap));
 
-  List<double> _getCols(int colCount, Size s) {
-    List<double> cols = [];
-    double step = 1 / (colCount + 1);
-    for (int i = 1; i <= colCount; i++) {
-      cols.add(s.width * (step * i));
+      // Debounced vibration
+      final now = DateTime.now();
+      if (now.difference(lastVibrationTime) > vibrationCooldown &&
+          snap != lastVibratedGear) {
+        vibrateForGear(snap);
+        lastVibratedGear = snap;
+        lastVibrationTime = now;
+      }
     }
-    return cols;
+  }
+
+  // -------------------------
+  // USER RELEASES
+  // -------------------------
+  void endDrag(Size s) {
+    visualOffset.value = Offset.zero;
+
+    // reset vibration system next drag
+    lastVibratedGear = 999;
   }
 
   // ----------------------------------------------------------
-  // SLOT MAP (top/bottom positions for each gear + R)
+  // Knob position based on current gear slot
+  // ----------------------------------------------------------
+  Offset getKnobPos(Size s) {
+    final slots = _slotMap(s);
+    return slots[currentGear.value] ?? Offset(s.width / 2, s.height / 2);
+  }
+
+  // ----------------------------------------------------------
+  // vJoy gear mapping
+  // ----------------------------------------------------------
+  int _convertGearToVJoy(int gear) {
+    if (gear == 0) return 10;  // Neutral
+    if (gear == -1) return 9;  // Reverse
+    return gear;
+  }
+
+  // ----------------------------------------------------------
+  // Slot positions (H-pattern)
   // ----------------------------------------------------------
   Map<int, Offset> _slotMap(Size s) {
     int gearCount = availableGears.value;
-    int colCount = _getColumnCount(gearCount);
-    List<double> cols = _getCols(colCount, s);
+    int colCount = (gearCount / 2).ceil();
+    if (gearCount % 2 == 0) colCount++;
+
+    double step = 1 / (colCount + 1);
+    List<double> cols =
+    List.generate(colCount, (i) => s.width * (step * (i + 1)));
 
     final top = s.height * 0.22;
     final bottom = s.height * 0.78;
@@ -77,23 +114,13 @@ class GearboxService {
     Map<int, Offset> slots = {};
 
     for (int col = 0; col < colCount; col++) {
-      int odd = col * 2 + 1;   // 1,3,5,7
-      int even = odd + 1;      // 2,4,6,8
+      int odd = col * 2 + 1;
+      int even = odd + 1;
 
-      // TOP ROW (odd gears)
-      if (odd <= gearCount) {
-        slots[odd] = Offset(cols[col], top);
-      }
+      if (odd <= gearCount) slots[odd] = Offset(cols[col], top);
+      if (even <= gearCount) slots[even] = Offset(cols[col], bottom);
 
-      // BOTTOM ROW (even gears)
-      if (even <= gearCount) {
-        slots[even] = Offset(cols[col], bottom);
-      }
-
-      // R logic: only when last column & no even gear exists
-      bool isLast = col == colCount - 1;
-
-      if (isLast && even > gearCount) {
+      if (col == colCount - 1 && even > gearCount) {
         slots[-1] = Offset(cols[col], bottom);
       }
     }
@@ -102,37 +129,131 @@ class GearboxService {
   }
 
   // ----------------------------------------------------------
-  // DETECT NEAREST GEAR SLOT
+  // NEUTRAL + GEAR DETECTION (FINAL FIXED VERSION)
   // ----------------------------------------------------------
   int _detectGear(Offset p, Size s) {
-    final mid = s.height * 0.50;
-    final neutralZone = s.height * 0.18;
-
-    // Neutral detection
-    if ((p.dy - mid).abs() < neutralZone) {
-      return 0;
-    }
+    final top = s.height * 0.22;
+    final bottom = s.height * 0.78;
 
     final slots = _slotMap(s);
-    const snapRadius = 95.0;
+    const snapRadius = 75.0;
 
-    int bestGear = 0;
+    // closest gear
+    int bestGear = 999;
     double bestDist = double.infinity;
 
     slots.forEach((gear, pos) {
       double dist = (p - pos).distance;
-
-      if (dist < bestDist && dist <= snapRadius) {
+      if (dist < bestDist) {
         bestDist = dist;
         bestGear = gear;
       }
     });
 
-    return bestGear;
+    // movement direction
+    bool movingDown = p.dy > lastFingerPos.dy;
+    bool movingUp = p.dy < lastFingerPos.dy;
+
+    // ⭐ EXPANDED SNAP for gears in direction of travel
+    if (movingDown && bestDist <= snapRadius * 1.8) return bestGear;
+    if (movingUp && bestDist <= snapRadius * 1.8) return bestGear;
+
+    // ⭐ normal snap
+    if (bestDist <= snapRadius) return bestGear;
+
+    // neutral zone (weakened)
+    final neutralTop = top + 70;
+    final neutralBottom = bottom - 70;
+    bool inNeutralY = p.dy > neutralTop && p.dy < neutralBottom;
+
+    if (inNeutralY) return 0;
+
+    return 0;
   }
 
-  // Set how many forward gears exist
+
+  // ----------------------------------------------------------
+  // VIBRATION MAP (Optimized)
+  // ----------------------------------------------------------
+  Future<void> vibrateForGear(int gear) async {
+    if (!(await Vibration.hasVibrator() ?? false)) return;
+
+    const S = 80;   // short
+    const L = 220;  // long
+    const gap = 70;
+
+    List<int> p = [0];
+
+    void pulse(int d) {
+      p.add(d);
+      p.add(gap);
+    }
+
+    switch (gear) {
+      case 0:   // Neutral
+        // pulse(S);
+        break;
+
+      case -1:  // Reverse
+        pulse(L);
+        pulse(L);
+        break;
+
+      case 1:
+        pulse(S);
+        break;
+
+      case 2:
+        pulse(S);
+        pulse(S);
+        break;
+
+      case 3:   // L-S
+        pulse(L);
+        pulse(S);
+        break;
+
+      case 4:   // S-S-L
+        pulse(S);
+        pulse(S);
+        pulse(L);
+        break;
+
+      case 5:   // S-L-S
+        pulse(S);
+        pulse(L);
+        pulse(S);
+        break;
+
+      case 6:   // S-S-S
+        pulse(S);
+        pulse(S);
+        pulse(S);
+        break;
+
+      case 7:   // L-L-S
+        pulse(L);
+        pulse(L);
+        pulse(S);
+        break;
+
+      case 8:   // L-S-S-L
+        pulse(L);
+        pulse(S);
+        pulse(S);
+        pulse(L);
+        break;
+
+      default:
+        pulse(S);
+    }
+
+    Vibration.vibrate(pattern: p);
+  }
+
+
   void setAvailableGears(int count) {
     availableGears.value = count.clamp(1, 8);
   }
+
 }

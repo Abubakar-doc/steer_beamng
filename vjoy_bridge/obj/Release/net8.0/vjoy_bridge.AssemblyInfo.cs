@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("vjoy_bridge")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6c83cc2c4e18fa9e1232176d0ca2d021a43a07f7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3623f17a785c9e32d5d6ebc64499d993a435435f")]
 [assembly: System.Reflection.AssemblyProductAttribute("vjoy_bridge")]
 [assembly: System.Reflection.AssemblyTitleAttribute("vjoy_bridge")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

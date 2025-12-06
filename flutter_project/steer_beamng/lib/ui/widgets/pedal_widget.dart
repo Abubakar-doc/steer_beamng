@@ -3,45 +3,71 @@ import 'package:get/get.dart';
 import 'package:steer_beamng/constants/assets_helper.dart';
 import 'package:steer_beamng/controllers/console_controller.dart';
 
-class PedalWidget extends StatelessWidget {
+class PedalWidget extends StatefulWidget {
   final ConsoleController controller;
   final double pedalHeight;
 
   const PedalWidget(this.controller, this.pedalHeight, {super.key});
 
-  static const double hbZoneWidth = 40;
+  @override
+  State<PedalWidget> createState() => _PedalWidgetState();
+}
+
+class _PedalWidgetState extends State<PedalWidget> {
+  static const double hbZoneWidth = 30;
+
+  bool _isHoldingHB = false;
+
+  ConsoleController get controller => widget.controller;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 130,
-      height: pedalHeight,
+      height: widget.pedalHeight,
       child: Stack(
         children: [
           // ============================================================
-          // LEFT SIDE — HANDBRAKE ZONE (tap + hold → ON, release → OFF)
+          // LEFT COLUMN — HANDBRAKE "P" BUTTON
           // ============================================================
           Positioned(
             left: 0,
             width: hbZoneWidth,
-            height: pedalHeight,
+            height: widget.pedalHeight,
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
 
-              // TAP should ONLY turn ON
-              onTap: () => controller.sendHandbrake(true),
+              // STATIC TAP → toggle ON/OFF (NO HOLD)
+              onTap: () {
+                controller.sendHandbrake(!controller.handbrake.value);
+              },
 
-              // HOLD turns on, release turns off
-              onPanStart: (_) => controller.sendHandbrake(true),
-              onPanEnd: (_) => controller.sendHandbrake(false),
-              onPanCancel: () => controller.sendHandbrake(false),
+              // LONG PRESS → HOLD HB ON
+              onLongPressStart: (_) {
+                controller.sendHandbrake(true);
+                _isHoldingHB = true;
+              },
+              onLongPressEnd: (_) {
+                controller.sendHandbrake(false);
+                _isHoldingHB = false;
+              },
+
+              // Slide-based HB (if finger moves in here)
+              onHorizontalDragUpdate: (d) {
+                controller.sendHandbrake(true);
+                _isHoldingHB = true;
+              },
+              onHorizontalDragEnd: (_) {
+                controller.sendHandbrake(false);
+                _isHoldingHB = false;
+              },
 
               child: Obx(() {
                 return Align(
                   alignment: Alignment(0, -controller.pedal.value),
                   child: Container(
-                    width: 30,
-                    height: 30,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
@@ -74,7 +100,7 @@ class PedalWidget extends StatelessWidget {
           Positioned(
             left: hbZoneWidth,
             width: 130 - hbZoneWidth,
-            height: pedalHeight,
+            height: widget.pedalHeight,
             child: Obx(() {
               return GestureDetector(
                 behavior: HitTestBehavior.translucent,
@@ -82,19 +108,27 @@ class PedalWidget extends StatelessWidget {
                 onPanStart: (_) => controller.pedalService.onStart(),
 
                 onPanUpdate: (d) {
-                  controller.pedalService.onMove(d, pedalHeight);
+                  controller.pedalService.onMove(d, widget.pedalHeight);
 
-                  // ENTER HB ZONE → ON
-                  if (d.globalPosition.dx < _hbGlobalRightEdge(context)) {
+                  // SLIDE INTO P ZONE → HB ON
+                  if (_inHBZone(context, d.globalPosition.dx)) {
                     controller.sendHandbrake(true);
+                    _isHoldingHB = true;
                   } else {
-                    controller.sendHandbrake(false);
+                    if (_isHoldingHB) {
+                      controller.sendHandbrake(false);
+                      _isHoldingHB = false;
+                    }
                   }
                 },
 
                 onPanEnd: (_) {
                   controller.pedalService.onEnd();
-                  controller.sendHandbrake(false);
+
+                  if (_isHoldingHB) {
+                    controller.sendHandbrake(false);
+                    _isHoldingHB = false;
+                  }
                 },
 
                 child: Stack(
@@ -102,14 +136,13 @@ class PedalWidget extends StatelessWidget {
                   children: [
                     Container(
                       width: 10,
-                      height: pedalHeight,
+                      height: widget.pedalHeight,
                       decoration: BoxDecoration(
                         color: Colors.white10,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: Colors.white24, width: 1),
                       ),
                     ),
-
                     Align(
                       alignment: Alignment(0, -controller.pedal.value),
                       child: Image.asset(
@@ -128,11 +161,10 @@ class PedalWidget extends StatelessWidget {
     );
   }
 
-  double _hbGlobalRightEdge(BuildContext context) {
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return 0;
-
-    final topLeft = renderBox.localToGlobal(Offset.zero);
-    return topLeft.dx + hbZoneWidth;
+  // Check if finger is inside HB zone in global coords
+  bool _inHBZone(BuildContext context, double fingerX) {
+    final box = context.findRenderObject() as RenderBox;
+    final boxLeft = box.localToGlobal(Offset.zero).dx;
+    return fingerX < boxLeft + hbZoneWidth;
   }
 }

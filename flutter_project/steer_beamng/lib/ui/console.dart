@@ -25,11 +25,43 @@ class Console extends GetView<ConsoleController> {
 
             return Column(
               children: [
-
-                // ---------------- REST OF UI ----------------
                 Expanded(
                   child: Stack(
                     children: [
+                      // ---------------- GEARBOX SWAP ----------------
+                      Obx(() {
+                        return controller.useAutoGearbox.value
+                            ? Positioned(
+                                right: 140,
+                                bottom: 70,
+                                child: AutoGearboxWidget(controller),
+                              )
+                            : Positioned(
+                                right: 140,
+                                bottom: 70,
+                                child: ManualGearboxWidget(controller, 180),
+                              );
+                      }),
+
+                      // ---------------- TOP ROW ----------------
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            WifiStatusWidget(controller),
+                            const SizedBox(width: 20),
+                            SteeringAngleDropdown(controller),
+                            const SizedBox(width: 20),
+                            GearSelectorWidget(
+                              controller,
+                            ), // <-- replaced dropdown
+                          ],
+                        ),
+                      ),
+
                       Positioned(
                         left: 16,
                         bottom: 16,
@@ -39,35 +71,6 @@ class Console extends GetView<ConsoleController> {
                         right: 24,
                         bottom: 24,
                         child: PedalWidget(controller, pedalH),
-                      ),
-
-                      // ---------------- GEARBOX SWAP ----------------
-                      // Obx(() {
-                      //   return controller.useAutoGearbox.value
-                      //       ? Positioned(
-                      //     right: 100,
-                      //     bottom: 70,
-                      //     child: AutoGearboxWidget(controller),
-                      //   )
-                      //       : Positioned(
-                      //     right: 100,
-                      //     bottom: 70,
-                      //     child: ManualGearboxWidget(controller, 180),
-                      //   );
-                      // }),
-
-                      // ---------------- TOP ROW ----------------
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        child: Row(
-                          children: [
-                            WifiStatusWidget(controller),
-                            const SizedBox(width: 20),
-                            SteeringAngleDropdown(controller),
-                            const SizedBox(width: 20),
-                            GearSelectorWidget(controller),      // <-- replaced dropdown
-                          ],
-                        ),
                       ),
                     ],
                   ),

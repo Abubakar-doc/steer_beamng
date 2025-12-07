@@ -207,6 +207,7 @@ if (msg.StartsWith("ACT_HOLD_START:"))
         "IGN"  => 15,
         "FLIP" => 13,
         "MODE" => 14,
+        "CAMBEHIND" => 30,
         _ => 0
     };
 
@@ -230,6 +231,7 @@ if (msg.StartsWith("ACT_HOLD_END:"))
         "IGN"  => 15,
         "FLIP" => 13,
         "MODE" => 14,
+        "CAMBEHIND" => 30,
         _ => 0
     };
 

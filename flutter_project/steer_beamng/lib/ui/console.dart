@@ -32,7 +32,7 @@ class Console extends GetView<ConsoleController> {
             final s = h * 0.2;
 
             // Sizes
-            final topRowWidth = w * 0.50;
+            final topRowWidth = w * 0.42;
 
             final wheelSize = math.min(h * 0.62, w * 0.45); // bigger now
             final pedalH = h * 0.90;
@@ -47,8 +47,7 @@ class Console extends GetView<ConsoleController> {
             final topBtnFont = h * 0.030;
             final topBtnSpacing = h * 0.02;
             final joyTop = h * 0.07;
-            final joyRight = h * 0.38;
-
+            final joyRight = h * 0.50;
 
             return Column(
               children: [
@@ -98,17 +97,39 @@ class Console extends GetView<ConsoleController> {
                                   onTap: controller.sendCameraChange,
                                 ),
                                 SizedBox(height: 12),
-                                CamBtn(
-                                  asset: AssetsHelper.camBehind,
-                                  iconSize: 28,
-                                  onTap: controller.sendCameraBehind,
+                                SizedBox(
+                                  height: 40,
+                                  width: 40,
+                                  child: appBtn(
+                                    label: "",
+                                    asset: AssetsHelper.camBehind,
+                                    iconSize: 28,
+                                    fontSize: 0,
+
+                                    onPressed: () {
+                                      controller.sendAction("CAMBEHIND");
+                                    },
+
+                                    onHoldStart: () {
+                                      controller.sendAction(
+                                        "CAMBEHIND",
+                                        holdStart: true,
+                                      );
+                                    },
+
+                                    onHoldEnd: () {
+                                      controller.sendAction(
+                                        "CAMBEHIND",
+                                        holdEnd: true,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ],
                             ),
                           ],
                         ),
                       ),
-
 
                       // ---------------- DASHBOARD ----------------
                       Positioned(
@@ -188,12 +209,17 @@ class Console extends GetView<ConsoleController> {
                                           controller.sendAction("Fix");
                                         },
                                         onHoldStart: () {
-                                          controller.sendAction("Fix", holdStart: true);
+                                          controller.sendAction(
+                                            "Fix",
+                                            holdStart: true,
+                                          );
                                         },
                                         onHoldEnd: () {
-                                          controller.sendAction("Fix", holdEnd: true);
+                                          controller.sendAction(
+                                            "Fix",
+                                            holdEnd: true,
+                                          );
                                         },
-
                                       ),
                                     ),
                                   ),

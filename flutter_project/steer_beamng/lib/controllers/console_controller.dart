@@ -163,6 +163,7 @@ class ConsoleController extends GetxController {
       "CAMZOOMOUT",
       "CAMCHANGE",
       "CAMRESET",
+      "CAMBEHIND",
     };
 
 

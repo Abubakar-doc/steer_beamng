@@ -20,6 +20,8 @@ class CamBtn extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(6),
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: Colors.grey[900],
           borderRadius: BorderRadius.circular(6),

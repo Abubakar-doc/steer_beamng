@@ -23,5 +23,6 @@ class AssetsHelper {
   static const String zoomIn = '$_baseVectors/zoomIn.svg';
   static const String zoomOut = '$_baseVectors/zoomOut.svg';
   static const String camChange = '$_baseVectors/camChange.svg';
+  static const String camBehind = '$_baseVectors/camBehind.svg';
 
 }

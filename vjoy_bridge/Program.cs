@@ -184,6 +184,7 @@ class Program
                         "CAMZOOMIN"  => 27,
                         "CAMZOOMOUT" => 28,
                         "CAMCHANGE"  => 29,
+                        "CAMBEHIND"  => 30,
                         _ => 0
                     };
 

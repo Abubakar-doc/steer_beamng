@@ -197,6 +197,7 @@ class ConsoleController extends GetxController {
   void sendCameraZoomIn() => udp.send("ACT:CAMZOOMIN");
   void sendCameraZoomOut() => udp.send("ACT:CAMZOOMOUT");
   void sendCameraChange() => udp.send("ACT:CAMCHANGE");
+  void sendCameraBehind() => udp.send("ACT:CAMBEHIND");
 
 
 }

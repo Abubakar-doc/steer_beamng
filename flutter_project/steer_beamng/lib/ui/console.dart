@@ -90,11 +90,20 @@ class Console extends GetView<ConsoleController> {
 
                             SizedBox(width: 20),
 
-                            // RIGHT BUTTON
-                            CamBtn(
-                              asset: AssetsHelper.camChange,
-                              iconSize: 28,
-                              onTap: controller.sendCameraChange,
+                            Column(
+                              children: [
+                                CamBtn(
+                                  asset: AssetsHelper.camChange,
+                                  iconSize: 28,
+                                  onTap: controller.sendCameraChange,
+                                ),
+                                SizedBox(height: 12),
+                                CamBtn(
+                                  asset: AssetsHelper.camBehind,
+                                  iconSize: 28,
+                                  onTap: controller.sendCameraBehind,
+                                ),
+                              ],
                             ),
                           ],
                         ),

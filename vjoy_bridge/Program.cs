@@ -144,6 +144,7 @@ if (msg.StartsWith("ACT:"))
         "DIFF" => 22,
         "ESC"  => 23,
         "4WD"  => 24,
+        "FLASH"=> 25, 
         _ => 0
     };
 

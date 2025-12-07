@@ -59,7 +59,7 @@ class VehicleDashboard extends StatelessWidget {
         children: [
           appBtn(label: "Fog",  asset: AssetsHelper.fog,  iconSize: iconSize, fontSize: fontSize, onPressed: () => onPressed("Fog")),
           appBtn(label: "Head", asset: AssetsHelper.headlight, iconSize: iconSize, fontSize: fontSize, onPressed: () => onPressed("Head")),
-          appBtn(label: "Horn", asset: AssetsHelper.horn, iconSize: iconSize, fontSize: fontSize, onPressed: () => onPressed("Horn")),
+          appBtn(label: "Flash", asset: AssetsHelper.flash, iconSize: iconSize, fontSize: fontSize, onPressed: () => onPressed("Flash")),
           appBtn(label: "Left", asset: AssetsHelper.left, iconSize: iconSize, fontSize: fontSize, onPressed: () => onPressed("Left")),
           appBtn(label: "Haz",  asset: AssetsHelper.hazard, iconSize: iconSize, fontSize: fontSize, onPressed: () => onPressed("Haz")),
           appBtn(label: "Right",asset: AssetsHelper.right, iconSize: iconSize, fontSize: fontSize, onPressed: () => onPressed("Right")),

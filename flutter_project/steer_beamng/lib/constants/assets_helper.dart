@@ -19,6 +19,7 @@ class AssetsHelper {
   static const String flip = '$_baseVectors/flip.svg';
   static const String mode = '$_baseVectors/mode.svg';
   static const String ign = '$_baseVectors/ign.svg';
+  static const String flash = '$_baseVectors/flash.svg';
 
 
 }

@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:steer_beamng/constants/assets_helper.dart';
 import 'package:steer_beamng/controllers/console_controller.dart';
@@ -24,18 +23,37 @@ class Console extends GetView<ConsoleController> {
         backgroundColor: Colors.black,
         body: LayoutBuilder(
           builder: (ctx, c) {
-            final size = math.min(c.maxWidth, c.maxHeight) * 0.6;
-            final pedalH = c.maxHeight * 0.8;
+            final w = c.maxWidth;
+            final h = c.maxHeight;
+
+            // LANDSCAPE SCALING (height is the boss)
+            final s = h * 0.2;
+
+            // Sizes
+            final topRowWidth = w * 0.50;
+
+            final wheelSize = math.min(h * 0.62, w * 0.45); // bigger now
+            final pedalH = h * 0.90;
+
+            final dashBottomOffset = h * 0.07;
+
+            final gearRightOffset = w * 0.18;
+            final gearBottomOffset = h * 0.12;
+            final gearSize = h * 0.55;
+
+            final topBtnIcon = h * 0.050;
+            final topBtnFont = h * 0.030;
+            final topBtnSpacing = h * 0.02;
 
             return Column(
               children: [
                 Expanded(
                   child: Stack(
                     children: [
-                      // ---------------- DASHBOARD (NEW) ----------------
+                      // ---------------- DASHBOARD ----------------
                       Positioned(
-                        bottom: 50,
-                        left: -40,
+                        bottom: dashBottomOffset,
+                        left: -s,
                         right: 0,
                         child: Center(
                           child: VehicleDashboard((action) {
@@ -43,74 +61,140 @@ class Console extends GetView<ConsoleController> {
                           }),
                         ),
                       ),
-                      // ---------------- GEARBOX SWAP ----------------
+
+                      // ---------------- GEARBOX (BIGGER) ----------------
                       Obx(() {
                         return controller.useAutoGearbox.value
                             ? Positioned(
-                                right: 140,
-                                bottom: 70,
-                                child: AutoGearboxWidget(controller),
-                              )
+                          right: gearRightOffset,
+                          bottom: gearBottomOffset,
+                          child: SizedBox(
+                            height: gearSize,
+                            child: AutoGearboxWidget(controller),
+                          ),
+                        )
                             : Positioned(
-                                right: 140,
-                                bottom: 70,
-                                child: ManualGearboxWidget(controller, 180),
-                              );
+                          right: gearRightOffset,
+                          bottom: gearBottomOffset,
+                          child: SizedBox(
+                            width: gearSize,
+                            child: ManualGearboxWidget(controller, gearSize),
+                          ),
+                        );
                       }),
 
-                      // ---------------- TOP ROW ----------------
+                      // ---------------- TOP BAR ----------------
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        child: Row(
+                        padding: EdgeInsets.symmetric(horizontal: w * 0.03, vertical: w * 0.02),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            WifiStatusWidget(controller),
-                            const SizedBox(width: 20),
-                            SteeringAngleDropdown(controller),
-                            const SizedBox(width: 20),
-                            GearSelectorWidget(controller),
-                            SizedBox(width: 20),
-                            appBtn(
-                              label: "",
-                              asset: AssetsHelper.fix,
-                              iconSize: 20,
-                              fontSize: 0,
-                              compact: true,
-                              onPressed: () => controller.sendAction("Fix"), // normal tap
-                              onHoldStart: () => controller.sendAction("Fix", holdStart: true),
-                              onHoldEnd: () => controller.sendAction("Fix", holdEnd: true),
+                            // Top row 1
+                            Row(
+                              children: [
+                                WifiStatusWidget(controller),
+                                SizedBox(width: w * 0.02),
+                                SteeringAngleDropdown(controller),
+                                SizedBox(width: w * 0.02),
+                                GearSelectorWidget(controller),
+                              ],
                             ),
-                            SizedBox(width: 10),
-                            appBtn(label: "", asset: AssetsHelper.flip, iconSize: 20, fontSize: 0, compact: true, onPressed: () => controller.sendAction("Flip")),
-                            SizedBox(width: 10),
-                            appBtn(label: "", asset: AssetsHelper.mode, iconSize: 20, fontSize: 0, compact: true, onPressed: () => controller.sendAction("Mode")),
-                            SizedBox(width: 10),
-                            appBtn(
-                              label: "",
-                              asset: AssetsHelper.ign,
-                              iconSize: 20,
-                              fontSize: 0,
-                              compact: true,
-                              onPressed: () => controller.sendAction("Ign"),
-                              onHoldStart: () => controller.sendAction("Ign", holdStart: true),
-                              onHoldEnd: () => controller.sendAction("Ign", holdEnd: true),
-                            )
+                            SizedBox(height: h * 0.015),
 
+                            // Top row 2 (50% width)
+                            SizedBox(
+                              width: topRowWidth,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: h * 0.13,
+                                      child: appBtn(
+                                        label: "Fix",
+                                        asset: AssetsHelper.fix,
+                                        iconSize: topBtnIcon,
+                                        fontSize: topBtnFont,
+                                        onPressed: () =>
+                                            controller.sendAction("Fix"),
+                                        onHoldStart: () => controller.sendAction(
+                                            "Fix",
+                                            holdStart: true),
+                                        onHoldEnd: () =>
+                                            controller.sendAction("Fix",
+                                                holdEnd: true),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: topBtnSpacing),
 
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: h * 0.13,
+                                      child: appBtn(
+                                        label: "Flip",
+                                        asset: AssetsHelper.flip,
+                                        iconSize: topBtnIcon,
+                                        fontSize: topBtnFont,
+                                        onPressed: () =>
+                                            controller.sendAction("Flip"),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: topBtnSpacing),
+
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: h * 0.13,
+                                      child: appBtn(
+                                        label: "Mode",
+                                        asset: AssetsHelper.mode,
+                                        iconSize: topBtnIcon,
+                                        fontSize: topBtnFont,
+                                        onPressed: () =>
+                                            controller.sendAction("Mode"),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: topBtnSpacing),
+
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: h * 0.13,
+                                      child: appBtn(
+                                        label: "Ign",
+                                        asset: AssetsHelper.ign,
+                                        iconSize: topBtnIcon,
+                                        fontSize: topBtnFont,
+                                        onPressed: () =>
+                                            controller.sendAction("Ign"),
+                                        onHoldStart: () => controller.sendAction(
+                                            "Ign",
+                                            holdStart: true),
+                                        onHoldEnd: () =>
+                                            controller.sendAction("Ign",
+                                                holdEnd: true),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
 
+                      // ---------------- STEERING WHEEL (BIGGER) ----------------
                       Positioned(
-                        left: 16,
-                        bottom: 16,
-                        child: SteeringWheelWidget(controller, size),
+                        left: w * 0.02,
+                        bottom: h * 0.02,
+                        child: SteeringWheelWidget(controller, wheelSize),
                       ),
+
+                      // ---------------- PEDALS ----------------
                       Positioned(
-                        right: 24,
-                        bottom: 24,
+                        right: w * 0.03,
+                        bottom: h * 0.02,
                         child: PedalWidget(controller, pedalH),
                       ),
                     ],
@@ -123,31 +207,4 @@ class Console extends GetView<ConsoleController> {
       ),
     );
   }
-}
-
-Widget topBtn(String label, String assetPath, ConsoleController c) {
-  return InkWell(
-    onTap: () => c.sendAction(label),
-    child: Container(
-      padding: EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: assetPath.endsWith(".svg")
-          ? SvgPicture.asset(
-        assetPath,
-        width: 22,
-        height: 22,
-        colorFilter:
-        const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-      )
-          : Image.asset(
-        assetPath,
-        width: 22,
-        height: 22,
-        color: Colors.white,
-      ),
-    ),
-  );
 }

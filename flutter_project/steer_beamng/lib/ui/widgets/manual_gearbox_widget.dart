@@ -50,7 +50,7 @@ class ManualGearboxWidget extends StatelessWidget {
                     width: knobSize,
                     height: knobSize,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.orange,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.black, width: 3),
                     ),

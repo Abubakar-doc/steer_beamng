@@ -144,6 +144,7 @@ class ConsoleController extends GetxController {
       "DIFF",
       "ESC",
       "4WD",
+      "FLASH",
     };
 
     if (!valid.contains(normalized)) {

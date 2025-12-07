@@ -44,40 +44,40 @@ Widget appBtn({
     },
 
     child: Container(
-      padding: EdgeInsets.all(compact ? 6 : 0),
+      padding: EdgeInsets.all(compact ? 6 : 3),
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(compact ? 6 : 8),
       ),
       child: compact
           ? SvgPicture.asset(
-        asset,
-        width: iconSize,
-        height: iconSize,
-        colorFilter: const ColorFilter.mode(
-          Colors.white,
-          BlendMode.srcIn,
-        ),
-      )
+              asset,
+              width: iconSize,
+              height: iconSize,
+              colorFilter: const ColorFilter.mode(
+                Colors.white,
+                BlendMode.srcIn,
+              ),
+            )
           : Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            asset,
-            width: iconSize,
-            height: iconSize,
-            colorFilter: const ColorFilter.mode(
-              Colors.white,
-              BlendMode.srcIn,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  asset,
+                  width: iconSize,
+                  height: iconSize,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                SizedBox(height: fontSize * 0.3),
+                Text(
+                  label,
+                  style: TextStyle(color: Colors.white, fontSize: fontSize),
+                ),
+              ],
             ),
-          ),
-          SizedBox(height: fontSize * 0.3),
-          Text(
-            label,
-            style: TextStyle(color: Colors.white, fontSize: fontSize),
-          ),
-        ],
-      ),
     ),
   );
 }

@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Globalization;
+using System.Threading;
 using vJoyInterfaceWrap;
 
 class Program
@@ -44,6 +45,25 @@ class Program
         bool clientConnected = false;
         DateTime lastPacket = DateTime.MinValue;
 
+        // ---------------- CLIENT MONITOR THREAD ----------------
+        new Thread(() =>
+        {
+            while (true)
+            {
+                Thread.Sleep(500);
+
+                if (clientConnected)
+                {
+                    if ((DateTime.Now - lastPacket).TotalSeconds > 2)
+                    {
+                        clientConnected = false;
+                        Console.WriteLine("❌ CLIENT DISCONNECTED");
+                    }
+                }
+            }
+        }).Start();
+
+        // ---------------- MAIN LOOP ----------------
         while (true)
         {
             try
@@ -52,20 +72,21 @@ class Program
                 byte[] data = udp.Receive(ref remote);
                 string msg = Encoding.UTF8.GetString(data).Trim();
 
-                // ---- CONNECT STATUS ----
+                // ---- Update last seen timestamp ----
+                lastPacket = DateTime.Now;
+
+                // ---- New client connected ----
                 if (!clientConnected)
                 {
                     clientConnected = true;
-                    Console.WriteLine($"CLIENT CONNECTED: {remote.Address}:{remote.Port}");
+                    Console.WriteLine($"✅ CLIENT CONNECTED: {remote.Address}:{remote.Port}");
                 }
 
-                lastPacket = DateTime.Now;
-
-                // ---- DISCONNECT CHECK ----
-                if ((DateTime.Now - lastPacket).TotalSeconds > 2 && clientConnected)
+                // ---------------- HEARTBEAT ----------------
+                if (msg == "PING")
                 {
-                    clientConnected = false;
-                    Console.WriteLine("CLIENT DISCONNECTED");
+                    udp.Send(Encoding.UTF8.GetBytes("PONG"), 4, remote);
+                    continue;
                 }
 
                 double? steer = null;
@@ -73,22 +94,13 @@ class Program
                 double? brk = null;
                 int? gear = null;
 
-                // ---------------- Parse ----------------
-                if (msg == "PING")
-                {
-                    byte[] pong = Encoding.UTF8.GetBytes("PONG");
-                    udp.Send(pong, pong.Length, remote);
-                    continue;
-                }
-
-                // Steering raw float
-                if (double.TryParse(msg, NumberStyles.Float,
-                    CultureInfo.InvariantCulture, out double s))
+                // ---------------- Steering ----------------
+                if (double.TryParse(msg, NumberStyles.Float, CultureInfo.InvariantCulture, out double s))
                 {
                     steer = Math.Clamp(s, -1, 1);
                 }
 
-                // THROTTLE
+                // ---------------- THROTTLE ----------------
                 if (msg.StartsWith("THR:"))
                 {
                     if (double.TryParse(msg[4..], NumberStyles.Float,
@@ -96,7 +108,7 @@ class Program
                         thr = Math.Clamp(v, 0, 1);
                 }
 
-                // BRAKE
+                // ---------------- BRAKE -------------------
                 if (msg.StartsWith("BRK:"))
                 {
                     if (double.TryParse(msg[4..], NumberStyles.Float,
@@ -104,99 +116,143 @@ class Program
                         brk = Math.Clamp(v, 0, 1);
                 }
 
-                // GEAR
+                // ---------------- CAMERA X ----------------
+                if (msg.StartsWith("CAMX:"))
+                {
+                    if (double.TryParse(msg[5..], NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out double cx))
+                    {
+                        cx = Math.Clamp(cx, -1, 1);
+                        int axis = (int)((cx + 1) * 16383.5);
+                        vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_RX);
+                    }
+                    continue;
+                }
+
+                // ---------------- CAMERA Y ----------------
+                if (msg.StartsWith("CAMY:"))
+                {
+                    if (double.TryParse(msg[5..], NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out double cy))
+                    {
+                        cy = Math.Clamp(cy, -1, 1);
+                        int axis = (int)((cy + 1) * 16383.5);
+                        vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_RY);
+                    }
+                    continue;
+                }
+
+                // ---------------- GEAR --------------------
                 if (msg.StartsWith("GEAR:"))
                 {
                     if (int.TryParse(msg[5..], out int g))
                         gear = g;
                 }
 
-                // HANDBRAKE (button 11)
-if (msg.StartsWith("HB:"))
-{
-    if (int.TryParse(msg[3..], out int hb))
-    {
-        bool pressed = hb == 1;
+                // ---------------- HANDBRAKE ----------------
+                if (msg.StartsWith("HB:"))
+                {
+                    if (int.TryParse(msg[3..], out int hb))
+                    {
+                        vJoy.SetBtn(hb == 1, id, 11);
+                    }
+                    continue;
+                }
 
-        // Set vJoy button #11
-        vJoy.SetBtn(pressed, id, 11);
-        continue;
-    }
-}
+                // ---------------- ACTION BUTTONS ---------
+                if (msg.StartsWith("ACT:"))
+                {
+                    string action = msg[4..].ToUpperInvariant();
 
-// ACTION BUTTONS
-if (msg.StartsWith("ACT:"))
+                    int button = action switch
+                    {
+                        "FIX"        => 12,
+                        "FLIP"       => 13,
+                        "MODE"       => 14,
+                        "IGN"        => 15,
+                        "FOG"        => 16,
+                        "HEAD"       => 17,
+                        "HORN"       => 18,
+                        "LEFT"       => 19,
+                        "HAZ"        => 20,
+                        "RIGHT"      => 21,
+                        "DIFF"       => 22,
+                        "ESC"        => 23,
+                        "4WD"        => 24,
+                        "FLASH"      => 25,
+                        "CAMRESET"   => 26,
+                        "CAMZOOMIN"  => 27,
+                        "CAMZOOMOUT" => 28,
+                        "CAMCHANGE"  => 29,
+                        _ => 0
+                    };
+
+                    if (button != 0)
+                    {
+                        vJoy.SetBtn(true, id, (uint)button);
+                        Thread.Sleep(60);
+                        vJoy.SetBtn(false, id, (uint)button);
+                    }
+
+                    continue;
+                }// -------------- HOLD START -----------------
+if (msg.StartsWith("ACT_HOLD_START:"))
 {
-    string action = msg[4..].ToUpperInvariant();
+    string action = msg["ACT_HOLD_START:".Length..].ToUpperInvariant();
 
     int button = action switch
     {
         "FIX"  => 12,
+        "IGN"  => 15,
         "FLIP" => 13,
         "MODE" => 14,
-        "IGN"  => 15,
-        "FOG"  => 16,
-        "HEAD" => 17,
-        "HORN" => 18,
-        "LEFT" => 19,
-        "HAZ"  => 20,
-        "RIGHT"=> 21,
-        "DIFF" => 22,
-        "ESC"  => 23,
-        "4WD"  => 24,
-        "FLASH"=> 25, 
         _ => 0
     };
 
     if (button != 0)
     {
-        vJoy.SetBtn(true, id, (uint)button);
-
-        // momentary press (50–80ms feels good)
-        System.Threading.Thread.Sleep(60);
-
-        vJoy.SetBtn(false, id, (uint)button);
+        vJoy.SetBtn(true, id, (uint)button); // hold down
+        Console.WriteLine($"[HOLD START] {action}");
     }
 
     continue;
 }
 
-// ----- HOLD START -----
-if (msg.StartsWith("ACT_HOLD_START:"))
-{
-    string action = msg["ACT_HOLD_START:".Length..].ToUpperInvariant();
-    uint button = action switch
-    {
-        "FIX" => 12,
-        "IGN" => 15,
-        _ => 0
-    };
-
-    if (button != 0)
-        vJoy.SetBtn(true, id, button); // keep holding
-
-    continue;
-}
-
-// ----- HOLD END -----
+// -------------- HOLD END -----------------
 if (msg.StartsWith("ACT_HOLD_END:"))
 {
     string action = msg["ACT_HOLD_END:".Length..].ToUpperInvariant();
-    uint button = action switch
+
+    int button = action switch
     {
-        "FIX" => 12,
-        "IGN" => 15,
+        "FIX"  => 12,
+        "IGN"  => 15,
+        "FLIP" => 13,
+        "MODE" => 14,
         _ => 0
     };
 
     if (button != 0)
-        vJoy.SetBtn(false, id, button); // release
+    {
+        vJoy.SetBtn(false, id, (uint)button); 
+    }
 
     continue;
 }
 
-                // ---------------- Apply to vJoy ----------------
 
+                // ---------------- GEAR BUTTONS (1–10) ----
+                if (gear.HasValue)
+                {
+                    int g = Math.Clamp(gear.Value, 1, 10);
+
+                    for (uint b = 1; b <= 10; b++)
+                        vJoy.SetBtn(false, id, b);
+
+                    vJoy.SetBtn(true, id, (uint)g);
+                }
+
+                // ---------------- Steering Axis ------------
                 if (steer.HasValue)
                 {
                     int axis = (int)((steer.Value + 1) * 16383.5);
@@ -213,24 +269,6 @@ if (msg.StartsWith("ACT_HOLD_END:"))
                 {
                     int axis = (int)(brk.Value * 32767);
                     vJoy.SetAxis(axis, id, HID_USAGES.HID_USAGE_SL1);
-                }
-
-                // ----- GEAR BUTTONS (1–10) -----
-                if (gear.HasValue)
-                {
-                    int g = Math.Clamp(gear.Value, 1, 10);
-
-                    for (uint b = 1; b <= 10; b++)
-                        vJoy.SetBtn(false, id, b);
-
-                    vJoy.SetBtn(true, id, (uint)g);
-                }
-
-                // ---- DISCONNECT CHECK AGAIN (post processing) ----
-                if ((DateTime.Now - lastPacket).TotalSeconds > 2 && clientConnected)
-                {
-                    clientConnected = false;
-                    Console.WriteLine("CLIENT DISCONNECTED");
                 }
             }
             catch (Exception ex)

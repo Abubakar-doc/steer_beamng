@@ -6,63 +6,47 @@ class AutoGearboxWidget extends StatelessWidget {
   final ConsoleController controller;
   final double height;
 
-  AutoGearboxWidget(this.controller, {this.height = 180, super.key});
-
-  // Vertical spacing from top and bottom
-  final double gearPadding = 15;
-
-  // Gear order (top to bottom visually)
-  final _gears = ["S", "D", "N", "R", "P"];
+  AutoGearboxWidget(this.controller, this.height, {super.key});
 
   @override
   Widget build(BuildContext context) {
+    final service = controller.autoService;
+
     return GestureDetector(
-      onPanStart: (d) => _onDrag(d.localPosition),
-      onPanUpdate: (d) => _onDrag(d.localPosition),
-      onPanEnd: (_) => _onDragEnd(),
+      onPanStart: (d) => service.startDrag(d.localPosition, height),
+      onPanUpdate: (d) => service.updateDrag(d.localPosition, height),
+      onPanEnd: (_) => service.endDrag(height),
+
       child: Obx(() {
-        final gear = controller.autoGear.value;
-        final knobSize = 32.0;
+        final knobPos = service.getKnobPos(height);
+        final offset = service.visualOffset.value;
 
-        final knobPos = _gearPos(gear);
-
-        return Padding(
-          padding: const EdgeInsets.only(right: 20.0),
+        return Transform.translate(
+          offset: -offset,
           child: Container(
-            width: 70,
+            width: 80,
             height: height,
             color: Colors.black,
             child: Stack(
               children: [
-                // RAIL
+                // ⭐ RAIL RESTORED
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: _AutoRailPainter(),
-                  ),
+                  child: CustomPaint(painter: _AutoRailPainter()),
                 ),
 
-                // GEAR LABELS
-                ..._buildLabels(),
+                ..._labels(height),
 
-                // KNOB
                 Positioned(
-                  left: 38 - knobSize / 2,
-                  top: knobPos - knobSize / 2,
+                  left: knobPos.dx - 14,
+                  top: knobPos.dy - 18,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 80),
-                    width: knobSize,
-                    height: knobSize,
+                    duration: const Duration(milliseconds: 60),
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: Colors.orange,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.4),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        )
-                      ],
+                      border: Border.all(width: 3, color: Colors.black),
                     ),
                   ),
                 ),
@@ -74,51 +58,16 @@ class AutoGearboxWidget extends StatelessWidget {
     );
   }
 
-  // ---------------------------------------------------------------
-  //   POSITION CALCULATIONS (with spacing)
-  // ---------------------------------------------------------------
+  List<Widget> _labels(double height) {
+    final gears = ["P", "R", "N", "D", "S"];
+    final slot = height / gears.length;
 
-  double get _usableHeight => height - (gearPadding * 2);
-
-  double get _step => _usableHeight / (_gears.length - 1);
-
-  double _gearPos(String g) {
-    final index = _gears.indexOf(g);
-    return gearPadding + index * _step;
-  }
-
-  String _nearestGear(double y) {
-    final index = ((y - gearPadding) / _step)
-        .round()
-        .clamp(0, _gears.length - 1);
-
-    return _gears[index];
-  }
-
-  // ---------------------------------------------------------------
-  //   DRAG LOGIC
-  // ---------------------------------------------------------------
-  void _onDrag(Offset pos) {
-    final g = _nearestGear(pos.dy);
-
-    controller.autoGear.value = g;
-    controller.setAutoGear(g); // send live
-  }
-
-  void _onDragEnd() {
-    controller.setAutoGear(controller.autoGear.value);
-  }
-
-  // ---------------------------------------------------------------
-  //   LABELS WITH SPACING
-  // ---------------------------------------------------------------
-  List<Widget> _buildLabels() {
-    return List.generate(_gears.length, (i) {
+    return List.generate(gears.length, (i) {
       return Positioned(
-        left: 8,
-        top: gearPadding + (i * _step) - 12,
+        left: 10,
+        top: slot * i + slot / 2 - 12,
         child: Text(
-          _gears[i],
+          gears[i],
           style: const TextStyle(
             color: Colors.white,
             fontSize: 22,
@@ -130,9 +79,7 @@ class AutoGearboxWidget extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------
-//   PAINT: VERTICAL RAIL
-// ---------------------------------------------------------------
+// ⭐ RAIL PAINTER RE-INTRODUCED
 class _AutoRailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size s) {

@@ -11,73 +11,57 @@ Widget appBtn({
   VoidCallback? onHoldEnd,
   bool compact = false,
 }) {
-  bool didHold = false;
+  bool held = false;
 
   return GestureDetector(
     behavior: HitTestBehavior.opaque,
 
-    onTapDown: (_) {
-      didHold = false;
-      if (onHoldStart != null) {
-        didHold = true;
-        onHoldStart!();
-      }
+    onLongPressStart: (_) {
+      held = true;
+      if (onHoldStart != null) onHoldStart!();
     },
 
-    onTapUp: (_) {
-      if (didHold && onHoldEnd != null) {
-        onHoldEnd!();
-        return; // STOP here → do NOT trigger onTap
-      }
-    },
-
-    onTapCancel: () {
-      if (didHold && onHoldEnd != null) {
-        onHoldEnd!();
-      }
+    onLongPressEnd: (_) {
+      if (onHoldEnd != null) onHoldEnd!();
+      // small delay then reset
+      Future.delayed(Duration(milliseconds: 50), () => held = false);
     },
 
     onTap: () {
-      if (!didHold) {
+      if (!held) {
         onPressed();
       }
     },
 
     child: Container(
-      padding: EdgeInsets.all(compact ? 6 : 3),
+      padding: EdgeInsets.all(compact ? 6 : 0),
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(compact ? 6 : 8),
       ),
       child: compact
           ? SvgPicture.asset(
-              asset,
-              width: iconSize,
-              height: iconSize,
-              colorFilter: const ColorFilter.mode(
-                Colors.white,
-                BlendMode.srcIn,
-              ),
-            )
+        asset,
+        width: iconSize,
+        height: iconSize,
+        colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+      )
           : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SvgPicture.asset(
-                  asset,
-                  width: iconSize,
-                  height: iconSize,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
-                  ),
-                ),
-                SizedBox(height: fontSize * 0.3),
-                Text(
-                  label,
-                  style: TextStyle(color: Colors.white, fontSize: fontSize),
-                ),
-              ],
-            ),
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SvgPicture.asset(
+            asset,
+            width: iconSize,
+            height: iconSize,
+            colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+          SizedBox(height: fontSize * 0.3),
+          Text(
+            label,
+            style: TextStyle(color: Colors.white, fontSize: fontSize),
+          ),
+        ],
+      ),
     ),
   );
 }

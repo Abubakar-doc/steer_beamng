@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
+import 'package:steer_beamng/services/auto_gearbox_service.dart';
 import 'package:steer_beamng/services/pedal_service.dart';
 import 'package:steer_beamng/services/steering_service.dart';
 import 'package:steer_beamng/services/udp_service.dart';
 import 'package:steer_beamng/services/gearbox_service.dart';
+import 'package:steer_beamng/utils/logger.dart';
 import 'package:steer_beamng/utils/toast_utils.dart';
 
 class ConsoleController extends GetxController {
@@ -10,7 +12,7 @@ class ConsoleController extends GetxController {
   final useAutoGearbox = false.obs;
   final pedal = 0.0.obs;
   final handbrake = false.obs;
-
+  late AutoGearboxService autoService;
   late SteeringService steering;
   late PedalService pedalService;
   late GearboxService gearbox;
@@ -54,7 +56,9 @@ class ConsoleController extends GetxController {
     super.onInit();
 
     udp = UdpService(onData: _processServerLine);
-
+    autoService = AutoGearboxService((g){
+      sendGear(_convertAuto(g));
+    });
     ever(udp.connected, (connected) {
       if (connected == true) {
         // ToastUtils.successToast("UDP Socket Ready");
@@ -88,6 +92,16 @@ class ConsoleController extends GetxController {
   }
 
   void _processServerLine(String line) {}
+  int _convertAuto(String g) {
+    switch (g) {
+      case "P": return 1;
+      case "R": return 9;
+      case "N": return 10;
+      case "D": return 2;
+      case "S": return 3;
+    }
+    return 10;
+  }
 
   void sendSteer(double v) => udp.send(v.toStringAsFixed(6));
 
@@ -145,7 +159,12 @@ class ConsoleController extends GetxController {
       "ESC",
       "4WD",
       "FLASH",
+      "CAMZOOMIN",
+      "CAMZOOMOUT",
+      "CAMCHANGE",
+      "CAMRESET",
     };
+
 
     if (!valid.contains(normalized)) {
       print("Unknown action: $action");
@@ -167,6 +186,17 @@ class ConsoleController extends GetxController {
     // ----- NORMAL TAP -----
     udp.send("ACT:$normalized");
   }
+  void sendCamera(double x, double y) {
+    udp.send("CAMX:${x.toStringAsFixed(3)}");
+    udp.send("CAMY:${y.toStringAsFixed(3)}");
+  }
+
+  void sendCameraReset() {
+    udp.send("ACT:CAMRESET");
+  }
+  void sendCameraZoomIn() => udp.send("ACT:CAMZOOMIN");
+  void sendCameraZoomOut() => udp.send("ACT:CAMZOOMOUT");
+  void sendCameraChange() => udp.send("ACT:CAMCHANGE");
 
 
 }

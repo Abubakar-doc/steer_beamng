@@ -45,6 +45,27 @@ class Program
         bool clientConnected = false;
         DateTime lastPacket = DateTime.MinValue;
 
+        // ---------------- LOG TOGGLE ----------------
+        bool showLogs = false;
+
+        new Thread(() =>
+        {
+            while (true)
+            {
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true).Key;
+
+                    if (key == ConsoleKey.L)
+                    {
+                        showLogs = !showLogs;
+                        Console.WriteLine(showLogs ? "🔍 Logs ON" : "🙈 Logs OFF");
+                    }
+                }
+                Thread.Sleep(50);
+            }
+        }).Start();
+
         // ---------------- CLIENT MONITOR THREAD ----------------
         new Thread(() =>
         {
@@ -71,6 +92,9 @@ class Program
                 // ---- RECEIVE PACKET ----
                 byte[] data = udp.Receive(ref remote);
                 string msg = Encoding.UTF8.GetString(data).Trim();
+
+                if (showLogs)
+                    Console.WriteLine($"[CMD] {msg}");
 
                 // ---- Update last seen timestamp ----
                 lastPacket = DateTime.Now;
@@ -196,53 +220,54 @@ class Program
                     }
 
                     continue;
-                }// -------------- HOLD START -----------------
-if (msg.StartsWith("ACT_HOLD_START:"))
-{
-    string action = msg["ACT_HOLD_START:".Length..].ToUpperInvariant();
+                }
 
-    int button = action switch
-    {
-        "FIX"  => 12,
-        "IGN"  => 15,
-        "FLIP" => 13,
-        "MODE" => 14,
-        "CAMBEHIND" => 30,
-        _ => 0
-    };
+                // -------------- HOLD START -----------------
+                if (msg.StartsWith("ACT_HOLD_START:"))
+                {
+                    string action = msg["ACT_HOLD_START:".Length..].ToUpperInvariant();
 
-    if (button != 0)
-    {
-        vJoy.SetBtn(true, id, (uint)button); // hold down
-        Console.WriteLine($"[HOLD START] {action}");
-    }
+                    int button = action switch
+                    {
+                        "FIX"  => 12,
+                        "IGN"  => 15,
+                        "FLIP" => 13,
+                        "MODE" => 14,
+                        "CAMBEHIND" => 30,
+                        _ => 0
+                    };
 
-    continue;
-}
+                    if (button != 0)
+                    {
+                        vJoy.SetBtn(true, id, (uint)button);
+                        Console.WriteLine($"[HOLD START] {action}");
+                    }
 
-// -------------- HOLD END -----------------
-if (msg.StartsWith("ACT_HOLD_END:"))
-{
-    string action = msg["ACT_HOLD_END:".Length..].ToUpperInvariant();
+                    continue;
+                }
 
-    int button = action switch
-    {
-        "FIX"  => 12,
-        "IGN"  => 15,
-        "FLIP" => 13,
-        "MODE" => 14,
-        "CAMBEHIND" => 30,
-        _ => 0
-    };
+                // -------------- HOLD END -----------------
+                if (msg.StartsWith("ACT_HOLD_END:"))
+                {
+                    string action = msg["ACT_HOLD_END:".Length..].ToUpperInvariant();
 
-    if (button != 0)
-    {
-        vJoy.SetBtn(false, id, (uint)button); 
-    }
+                    int button = action switch
+                    {
+                        "FIX"  => 12,
+                        "IGN"  => 15,
+                        "FLIP" => 13,
+                        "MODE" => 14,
+                        "CAMBEHIND" => 30,
+                        _ => 0
+                    };
 
-    continue;
-}
+                    if (button != 0)
+                    {
+                        vJoy.SetBtn(false, id, (uint)button);
+                    }
 
+                    continue;
+                }
 
                 // ---------------- GEAR BUTTONS (1–10) ----
                 if (gear.HasValue)

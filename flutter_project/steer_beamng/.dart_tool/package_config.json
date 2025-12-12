@@ -255,9 +255,9 @@
     },
     {
       "name": "shared_preferences",
-      "rootUri": "file:///C:/Users/DELL%205540/AppData/Local/Pub/Cache/hosted/pub.dev/shared_preferences-2.5.3",
+      "rootUri": "file:///C:/Users/DELL%205540/AppData/Local/Pub/Cache/hosted/pub.dev/shared_preferences-2.5.4",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.9"
     },
     {
       "name": "shared_preferences_android",

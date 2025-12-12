@@ -32,7 +32,10 @@ class ManualGearboxWidget extends StatelessWidget {
           child: Container(
             width: size,
             height: size,
-            color: Colors.black,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: Colors.black.withValues(alpha: 0.3),
+            ),
             child: Stack(
               children: [
                 CustomPaint(
@@ -72,8 +75,7 @@ class ManualGearboxWidget extends StatelessWidget {
     if (gearCount % 2 == 0) colCount++;
 
     double step = 1 / (colCount + 1);
-    List<double> cols =
-    List.generate(colCount, (i) => size * (step * (i + 1)));
+    List<double> cols = List.generate(colCount, (i) => size * (step * (i + 1)));
 
     List<Widget> labels = [];
 
@@ -82,35 +84,46 @@ class ManualGearboxWidget extends StatelessWidget {
       int even = odd + 1;
 
       if (odd <= gearCount) {
-        labels.add(Positioned(
-          left: cols[col] - 10,
-          top: top,
-          child: Text("$odd",
-              style: const TextStyle(color: Colors.white, fontSize: 22)),
-        ));
+        labels.add(
+          Positioned(
+            left: cols[col] - 10,
+            top: top,
+            child: Text(
+              "$odd",
+              style: const TextStyle(color: Colors.white, fontSize: 22),
+            ),
+          ),
+        );
       }
 
       if (even <= gearCount) {
-        labels.add(Positioned(
-          left: cols[col] - 10,
-          top: bottom,
-          child: Text("$even",
-              style: const TextStyle(color: Colors.white, fontSize: 22)),
-        ));
+        labels.add(
+          Positioned(
+            left: cols[col] - 10,
+            top: bottom,
+            child: Text(
+              "$even",
+              style: const TextStyle(color: Colors.white, fontSize: 22),
+            ),
+          ),
+        );
       } else if (col == colCount - 1) {
-        labels.add(Positioned(
-          left: cols[col] - 10,
-          top: bottom,
-          child: const Text("R",
-              style: TextStyle(color: Colors.white, fontSize: 22)),
-        ));
+        labels.add(
+          Positioned(
+            left: cols[col] - 10,
+            top: bottom,
+            child: const Text(
+              "R",
+              style: TextStyle(color: Colors.white, fontSize: 22),
+            ),
+          ),
+        );
       }
     }
 
     return Stack(children: labels);
   }
 }
-
 
 class _HPatternPainter extends CustomPainter {
   final int gearCount;
@@ -120,7 +133,7 @@ class _HPatternPainter extends CustomPainter {
   int _getColumnCount(int gearCount) {
     int cols = (gearCount / 2).ceil();
     bool lastOdd = gearCount % 2 == 1; // 5,7 → true
-    return lastOdd ? cols : cols + 1;  // even → extra R column
+    return lastOdd ? cols : cols + 1; // even → extra R column
   }
 
   List<double> _getCols(int colCount, Size s) {
@@ -154,8 +167,8 @@ class _HPatternPainter extends CustomPainter {
       bool hasBottom = even <= gearCount;
       bool isLast = col == colCount - 1;
 
-      bool isPureRColumn = isLast && !hasTop && !hasBottom;          // 6,8 etc
-      bool isOddPlusRColumn = isLast && hasTop && !hasBottom;        // 5/R, 7/R
+      bool isPureRColumn = isLast && !hasTop && !hasBottom; // 6,8 etc
+      bool isOddPlusRColumn = isLast && hasTop && !hasBottom; // 5/R, 7/R
 
       if (isPureRColumn) {
         // Only R at bottom → half rail (mid → bottom)
@@ -173,11 +186,7 @@ class _HPatternPainter extends CustomPainter {
         );
       } else if (hasTop) {
         // only top gear (rare)
-        canvas.drawLine(
-          Offset(cols[col], top),
-          Offset(cols[col], mid),
-          paint,
-        );
+        canvas.drawLine(Offset(cols[col], top), Offset(cols[col], mid), paint);
       } else if (hasBottom) {
         // only bottom gear
         canvas.drawLine(
@@ -200,5 +209,3 @@ class _HPatternPainter extends CustomPainter {
   bool shouldRepaint(covariant _HPatternPainter oldDelegate) =>
       oldDelegate.gearCount != gearCount;
 }
-
-

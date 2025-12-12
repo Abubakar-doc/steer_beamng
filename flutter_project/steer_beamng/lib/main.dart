@@ -31,11 +31,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Steering Wheel',
+      title: 'Steer Beamng',
       debugShowCheckedModeBanner: false,
       initialRoute: Routes.steering,
       initialBinding: ConsoleBinding(),
       getPages: AppPages.routes,
+      theme: ThemeData.dark(),
+      themeMode: ThemeMode.dark,
     );
   }
 }

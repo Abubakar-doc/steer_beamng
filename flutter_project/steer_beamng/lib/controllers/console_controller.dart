@@ -1,17 +1,21 @@
+import 'dart:io';
+
 import 'package:get/get.dart';
 import 'package:steer_beamng/services/auto_gearbox_service.dart';
 import 'package:steer_beamng/services/pedal_service.dart';
 import 'package:steer_beamng/services/steering_service.dart';
-import 'package:steer_beamng/services/udp_service.dart';
+import 'package:steer_beamng/services/network_service.dart';
 import 'package:steer_beamng/services/gearbox_service.dart';
 import 'package:steer_beamng/utils/logger.dart';
 import 'package:steer_beamng/utils/toast_utils.dart';
 
 class ConsoleController extends GetxController {
-  late UdpService udp;
+  late NetworkService udp;
+
   final useAutoGearbox = false.obs;
   final pedal = 0.0.obs;
   final handbrake = false.obs;
+
   late AutoGearboxService autoService;
   late SteeringService steering;
   late PedalService pedalService;
@@ -23,55 +27,30 @@ class ConsoleController extends GetxController {
   final gearOptions = ["Auto", 5, 6, 7, 8];
   final selectedGearCount = 5.obs;
 
-  // -------------------------
-  // NEW AUTO GEAR SUPPORT
-  // -------------------------
   final autoGear = "P".obs;
-
-  int _gearToCode(String g) {
-    switch (g) {
-      case "P":
-        return 1;
-      case "D":
-        return 2;
-      case "S":
-        return 3;
-      case "R":
-        return 9;
-      case "N":
-        return 10;
-    }
-    return 10;
-  }
-
-  void setAutoGear(String g) {
-    autoGear.value = g;
-    sendGear(_gearToCode(g));
-  }
-
-  // -------------------------
 
   @override
   void onInit() {
     super.onInit();
 
-    udp = UdpService(onData: _processServerLine);
-    autoService = AutoGearboxService((g){
+    udp = NetworkService(onData: _processServerLine);
+
+    autoService = AutoGearboxService((g) {
       sendGear(_convertAuto(g));
     });
-    ever(udp.connected, (connected) {
-      if (connected == true) {
-        // ToastUtils.successToast("UDP Socket Ready");
-      } else {
-        ToastUtils.failureToast("UDP Socket Closed");
+
+    ever(udp.connected, (v) {
+      if (v == true) {
+        Logger.success("UDP socket ready", tag: "CONSOLE");
       }
     });
 
     ever(udp.serverAlive, (alive) {
       if (alive == true) {
-        ToastUtils.successToast("Connected to vJoy Server");
+        final name = udp.connectedServer?.name ?? "Server";
+        ToastUtils.successToast("Connected to $name");
       } else {
-        ToastUtils.failureToast("Lost Connection to Server");
+        ToastUtils.failureToast("Disconnected");
       }
     });
 
@@ -82,7 +61,8 @@ class ConsoleController extends GetxController {
     gearbox = GearboxService(sendGear)
       ..setAvailableGears(selectedGearCount.value);
 
-    udp.connect();
+    // 🔹 start discovery ONLY
+    udp.start();
   }
 
   @override
@@ -91,18 +71,13 @@ class ConsoleController extends GetxController {
     super.onClose();
   }
 
-  void _processServerLine(String line) {}
-  int _convertAuto(String g) {
-    switch (g) {
-      case "P": return 1;
-      case "R": return 9;
-      case "N": return 10;
-      case "D": return 2;
-      case "S": return 3;
-    }
-    return 10;
+  // ---------- USER SELECTS SERVER ----------
+  void connectToServer(InternetAddress ip) {
+    udp.connectToServer(ip);
+    ToastUtils.infoToast("Connecting to ${ip.address}");
   }
 
+  // ---------- SENDERS ----------
   void sendSteer(double v) => udp.send(v.toStringAsFixed(6));
 
   void sendPedals(double thr, double brk) {
@@ -117,8 +92,29 @@ class ConsoleController extends GetxController {
     udp.send("HB:${pressed ? 1 : 0}");
   }
 
-  void connectVJoy() => udp.connect();
+  // ---------- AUTO GEAR ----------
+  int _convertAuto(String g) {
+    switch (g) {
+      case "P":
+        return 1;
+      case "R":
+        return 9;
+      case "N":
+        return 10;
+      case "D":
+        return 2;
+      case "S":
+        return 3;
+    }
+    return 10;
+  }
 
+  void setAutoGear(String g) {
+    autoGear.value = g;
+    sendGear(_convertAuto(g));
+  }
+
+  // ---------- UI SETTINGS ----------
   void setSteeringAngle(double a) {
     selectedAngle.value = a;
     steering.maxAngle.value = a;
@@ -129,76 +125,35 @@ class ConsoleController extends GetxController {
     gearbox.setAvailableGears(g);
   }
 
-  void toggleConnection() {
-    if (udp.connected.value) {
-      udp.dispose();
-      udp.connected.value = false;
-      ToastUtils.failureToast("Disconnected");
-    } else {
-      udp.connect();
-      ToastUtils.infoToast("Connecting…");
-    }
-  }
-
-  void sendAction(String action, {bool holdStart = false, bool holdEnd = false}) {
+  // ---------- ACTIONS ----------
+  void sendAction(
+    String action, {
+    bool holdStart = false,
+    bool holdEnd = false,
+  }) {
     final normalized = action.toUpperCase().trim();
 
-    // allowed actions
-    const valid = {
-      "FIX",
-      "FLIP",
-      "MODE",
-      "IGN",
-      "FOG",
-      "HEAD",
-      "HORN",
-      "LEFT",
-      "HAZ",
-      "RIGHT",
-      "DIFF",
-      "ESC",
-      "4WD",
-      "FLASH",
-      "CAMZOOMIN",
-      "CAMZOOMOUT",
-      "CAMCHANGE",
-      "CAMRESET",
-      "CAMBEHIND",
-    };
-
-
-    if (!valid.contains(normalized)) {
-      print("Unknown action: $action");
-      return;
-    }
-
-    // ----- HOLD START -----
     if (holdStart) {
       udp.send("ACT_HOLD_START:$normalized");
       return;
     }
 
-    // ----- HOLD END -----
     if (holdEnd) {
       udp.send("ACT_HOLD_END:$normalized");
       return;
     }
 
-    // ----- NORMAL TAP -----
     udp.send("ACT:$normalized");
   }
+
   void sendCamera(double x, double y) {
     udp.send("CAMX:${x.toStringAsFixed(3)}");
     udp.send("CAMY:${y.toStringAsFixed(3)}");
   }
 
-  void sendCameraReset() {
-    udp.send("ACT:CAMRESET");
-  }
-  void sendCameraZoomIn() => udp.send("ACT:CAMZOOMIN");
-  void sendCameraZoomOut() => udp.send("ACT:CAMZOOMOUT");
+  void sendCameraReset() => udp.send("ACT:CAMRESET");
   void sendCameraChange() => udp.send("ACT:CAMCHANGE");
   void sendCameraBehind() => udp.send("ACT:CAMBEHIND");
 
-
+  void _processServerLine(String line) {}
 }

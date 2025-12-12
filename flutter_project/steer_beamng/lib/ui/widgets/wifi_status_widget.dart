@@ -9,57 +9,36 @@ class WifiStatusWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      double ms = controller.udp.pingMs.value;
+      final alive = controller.udp.serverAlive.value;
+      final ms = controller.udp.pingMs.value;
 
-      Color pingColor;
-      if (!controller.udp.serverAlive.value) {
-        pingColor = Colors.red;
+      Color color;
+      if (!alive) {
+        color = Colors.red;
       } else if (ms < 40) {
-        pingColor = Colors.green;
+        color = Colors.green;
       } else if (ms < 100) {
-        pingColor = Colors.yellow;
+        color = Colors.yellow;
       } else {
-        pingColor = Colors.red;
+        color = Colors.red;
       }
 
       return Row(
         children: [
-          // WiFi icon
           Icon(
-            controller.udp.serverAlive.value ? Icons.wifi : Icons.wifi_off,
-            color: pingColor,
+            alive ? Icons.wifi : Icons.wifi_off,
+            color: color,
             size: 30,
           ),
-
-          if (controller.udp.serverAlive.value) ...[
-            const SizedBox(width: 5),
-            SizedBox(
-              width: 50,
-              child: Text(
-                "${ms.toStringAsFixed(0)} ms",
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                softWrap: false,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: pingColor,
-                  fontWeight: FontWeight.bold,
-                ),
+          const SizedBox(width: 6),
+          if (alive)
+            Text(
+              "${ms.toStringAsFixed(0)} ms",
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
               ),
-            ),
-          ],
-
-          const SizedBox(width: 8),
-
-          // Toggle Switch
-          Switch(
-            value: controller.udp.connected.value,
-            activeColor: Colors.green,
-            inactiveTrackColor: Colors.black,
-            onChanged: (value) {
-              controller.toggleConnection();
-            },
-          ),
+            )
         ],
       );
     });

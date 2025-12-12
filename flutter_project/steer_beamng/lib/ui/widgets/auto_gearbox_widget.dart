@@ -24,12 +24,14 @@ class AutoGearboxWidget extends StatelessWidget {
         return Transform.translate(
           offset: -offset,
           child: Container(
-            width: 80,
+            width: Get.height * 0.5,
             height: height,
-            color: Colors.black,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+                color: Colors.black.withValues(alpha: 0.3),
+            ),
             child: Stack(
               children: [
-                // ⭐ RAIL RESTORED
                 Positioned.fill(
                   child: CustomPaint(painter: _AutoRailPainter()),
                 ),
@@ -37,7 +39,7 @@ class AutoGearboxWidget extends StatelessWidget {
                 ..._labels(height),
 
                 Positioned(
-                  left: knobPos.dx - 14,
+                  left: Get.height * 0.5 * 0.55 - 18,
                   top: knobPos.dy - 18,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 60),
@@ -64,7 +66,7 @@ class AutoGearboxWidget extends StatelessWidget {
 
     return List.generate(gears.length, (i) {
       return Positioned(
-        left: 10,
+        left: Get.height * 0.5 * 0.30,
         top: slot * i + slot / 2 - 12,
         child: Text(
           gears[i],

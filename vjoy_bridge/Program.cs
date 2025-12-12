@@ -6,7 +6,7 @@ class Program
 {
     static void Main()
     {
-        Logger.Info("=== vJoy Bridge Starting ===");
+        Logger.Info("=== App Starting ===");
 
         var vjoy = new VJoyManager();
         if (!vjoy.Init()) return;

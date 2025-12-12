@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -14,19 +15,31 @@ namespace Network
             EnableBroadcast = true
         };
 
-        public void Start(VJoyManager vjoy)
-        {
-            while (true)
-            {
-                IPEndPoint remote = new(IPAddress.Any, 0); // 🔴 NOT readonly
-                var data = _udp.Receive(ref remote);
-                var msg = Encoding.UTF8.GetString(data).Trim();
+        private bool _showLogs = false;
 
-                if (DiscoveryHandler.Handle(_udp, remote, msg))
-                    continue;
+public void Start(VJoyManager vjoy)
+{
+    Console.WriteLine($"📡 UDP Server listening on :{AppConfig.Port}");
 
-                MessageParser.Parse(msg, vjoy);
-            }
-        }
+    var monitor = new ClientMonitor();
+
+    while (true)
+    {
+        IPEndPoint remote = new(IPAddress.Any, 0);
+        var data = _udp.Receive(ref remote);
+        var msg = Encoding.UTF8.GetString(data).Trim();
+
+        monitor.Ping(remote);   // ✅ ONLY this
+
+        if (_showLogs)
+            Console.WriteLine($"[CMD] {msg}");
+
+        if (DiscoveryHandler.Handle(_udp, remote, msg))
+            continue;
+
+        MessageParser.Parse(msg, vjoy);
+    }
+}
+
     }
 }

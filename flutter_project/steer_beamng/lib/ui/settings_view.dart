@@ -34,15 +34,23 @@ class SettingsView extends StatelessWidget {
               const SizedBox(height: 12),
 
               Expanded(
-                child: c.servers.isEmpty
-                    ? const Center(child: Text("No servers found"))
-                    : ListView.separated(
-                        itemCount: c.servers.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (_, i) {
-                          final s = c.servers[i];
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    c.refresh();
+                    await Future.delayed(const Duration(milliseconds: 500));
+                  },
+                  child: c.servers.isEmpty
+                      ? ListView(
+                          children: const [
+                            Center(child: Text("Nothing to show.")),
+                          ],
+                        )
+                      : ListView.separated(
+                          itemCount: c.servers.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (_, i) {
+                            final s = c.servers[i];
 
-                          return Obx(() {
                             final isFav = c.favourite == s.ip.address;
                             final isConnected =
                                 c.connected?.address == s.ip.address;
@@ -66,7 +74,7 @@ class SettingsView extends StatelessWidget {
                                   ),
                                 ),
                                 subtitle: Text(
-                                  "${s.ip.address}${isConnected ? "  • Connected" : ""}",
+                                  "${s.ip.address}${isConnected ? " • Connected" : ""}",
                                   style: TextStyle(
                                     color: isConnected
                                         ? Colors.green
@@ -99,9 +107,9 @@ class SettingsView extends StatelessWidget {
                                 ),
                               ),
                             );
-                          });
-                        },
-                      ),
+                          },
+                        ),
+                ),
               ),
             ],
           );

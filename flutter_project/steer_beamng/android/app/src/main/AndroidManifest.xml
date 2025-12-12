@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
 
     <application
-        android:label="steer_beamng"
+        android:label="Steer Beamng"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

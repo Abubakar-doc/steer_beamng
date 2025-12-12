@@ -7,8 +7,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class DiscoveredServer {
   final InternetAddress ip;
   final String name;
+  final DateTime lastSeen;
 
-  DiscoveredServer(this.ip, this.name);
+  DiscoveredServer(this.ip, this.name, this.lastSeen);
+
+  DiscoveredServer copyWith({DateTime? lastSeen}) =>
+      DiscoveredServer(ip, name, lastSeen ?? this.lastSeen);
 }
 
 class NetworkService {
@@ -20,7 +24,7 @@ class NetworkService {
 
   final discoveredServers = <DiscoveredServer>[].obs;
 
-  final Rxn<InternetAddress> currentServerIp = Rxn<InternetAddress>();
+  final Rxn<InternetAddress> currentServerIp = Rxn();
   final favouriteIp = RxnString();
 
   final void Function(String line) onData;
@@ -29,12 +33,16 @@ class NetworkService {
 
   DateTime? _lastPingSend;
   DateTime? _lastPong;
+
   Timer? _pingTimer;
+  Timer? _discoveryTimer;
+  Timer? _cleanupTimer;
 
   static const _favKey = "favorite_server";
 
   NetworkService({required this.onData});
 
+  // ---------------- START ----------------
   Future<void> start() async {
     socket = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
@@ -48,7 +56,7 @@ class NetworkService {
 
     await loadFavourite();
 
-    socket!.listen((event) async {
+    socket!.listen((event) {
       if (event != RawSocketEvent.read) return;
 
       final d = socket!.receive();
@@ -56,22 +64,34 @@ class NetworkService {
 
       final msg = utf8.decode(d.data).trim();
 
-      // SERVER_HERE:PCNAME
+      // ---------- DISCOVERY ----------
       if (msg.startsWith("SERVER_HERE")) {
         final parts = msg.split(":");
         final name = parts.length > 1 ? parts[1] : "Unknown PC";
+        final ip = d.address;
 
-        if (!discoveredServers.any((e) => e.ip.address == d.address.address)) {
-          discoveredServers.add(DiscoveredServer(d.address, name));
+        final index = discoveredServers
+            .indexWhere((s) => s.ip.address == ip.address);
+
+        if (index != -1) {
+          discoveredServers[index] =
+              discoveredServers[index].copyWith(
+                lastSeen: DateTime.now(),
+              );
+        } else {
+          discoveredServers.add(
+            DiscoveredServer(ip, name, DateTime.now()),
+          );
         }
 
-        if (favouriteIp.value == d.address.address &&
+        if (favouriteIp.value == ip.address &&
             currentServerIp.value == null) {
-          connectToServer(d.address);
+          connectToServer(ip);
         }
         return;
       }
 
+      // ---------- HEARTBEAT ----------
       if (msg == "PONG") {
         _lastPong = DateTime.now();
         serverAlive.value = true;
@@ -86,8 +106,11 @@ class NetworkService {
     });
 
     _discover();
+    _startDiscoveryLoop();
+    _startCleanupLoop();
   }
 
+  // ---------------- DISCOVERY ----------------
   void _discover() {
     socket?.send(
       utf8.encode("DISCOVER_SERVER"),
@@ -96,10 +119,34 @@ class NetworkService {
     );
   }
 
+  void _startDiscoveryLoop() {
+    _discoveryTimer?.cancel();
+    _discoveryTimer =
+        Timer.periodic(const Duration(seconds: 3), (_) => _discover());
+  }
+
+  void _startCleanupLoop() {
+    _cleanupTimer?.cancel();
+    _cleanupTimer =
+        Timer.periodic(const Duration(seconds: 2), (_) {
+          final now = DateTime.now();
+          discoveredServers.removeWhere(
+                (s) => now.difference(s.lastSeen).inSeconds > 5,
+          );
+        });
+  }
+
+  // ---------------- CONNECTION ----------------
   Future<void> connectToServer(InternetAddress ip) async {
     currentServerIp.value = ip;
     await toggleFavourite(ip.address);
     _startPing();
+  }
+
+  void disconnect() {
+    _pingTimer?.cancel();
+    currentServerIp.value = null;
+    serverAlive.value = false;
   }
 
   void send(String msg) {
@@ -109,18 +156,24 @@ class NetworkService {
 
   void _startPing() {
     _pingTimer?.cancel();
-    _pingTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-      if (currentServerIp.value == null) return;
-      _lastPingSend = DateTime.now();
-      send("PING");
+    _pingTimer =
+        Timer.periodic(const Duration(milliseconds: 500), (_) {
+          if (currentServerIp.value == null) return;
 
-      if (_lastPong != null &&
-          DateTime.now().difference(_lastPong!).inMilliseconds > 2000) {
-        serverAlive.value = false;
-      }
-    });
+          _lastPingSend = DateTime.now();
+          send("PING");
+
+          if (_lastPong != null &&
+              DateTime.now()
+                  .difference(_lastPong!)
+                  .inMilliseconds >
+                  2000) {
+            serverAlive.value = false;
+          }
+        });
   }
 
+  // ---------------- FAVOURITE ----------------
   Future<void> loadFavourite() async {
     final prefs = await SharedPreferences.getInstance();
     favouriteIp.value = prefs.getString(_favKey);
@@ -138,19 +191,7 @@ class NetworkService {
     }
   }
 
-  void disconnect() {
-    _pingTimer?.cancel();
-    currentServerIp.value = null;
-    serverAlive.value = false;
-  }
-
-  void dispose() {
-    _pingTimer?.cancel();
-    socket?.close();
-    connected.value = false;
-    serverAlive.value = false;
-  }
-
+  // ---------------- HELPERS ----------------
   DiscoveredServer? get connectedServer {
     final ip = currentServerIp.value;
     if (ip == null) return null;
@@ -160,4 +201,17 @@ class NetworkService {
     );
   }
 
+  void refreshDiscovery() {
+    discoveredServers.clear();
+    _discover();
+  }
+
+  void dispose() {
+    _cleanupTimer?.cancel();
+    _discoveryTimer?.cancel();
+    _pingTimer?.cancel();
+    socket?.close();
+    connected.value = false;
+    serverAlive.value = false;
+  }
 }

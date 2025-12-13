@@ -36,7 +36,7 @@ class ConsoleView extends GetView<ConsoleController> {
           final wheelSize = math.min(h * 0.62, w * 0.45); // bigger now
           final pedalH = h * 0.90;
 
-          final dashBottomOffset = h * 0.07;
+          final dashBottomOffset = h * 0.1;
 
           final gearRightOffset = w * 0.20;
           final gearBottomOffset = h * 0.08;
@@ -78,11 +78,17 @@ class ConsoleView extends GetView<ConsoleController> {
                                   },
 
                                   onHoldStart: () {
-                                    controller.sendAction("CAMZOOMIN", holdStart: true);
+                                    controller.sendAction(
+                                      "CAMZOOMIN",
+                                      holdStart: true,
+                                    );
                                   },
 
                                   onHoldEnd: () {
-                                    controller.sendAction("CAMZOOMIN", holdEnd: true);
+                                    controller.sendAction(
+                                      "CAMZOOMIN",
+                                      holdEnd: true,
+                                    );
                                   },
                                 ),
                               ),
@@ -103,17 +109,22 @@ class ConsoleView extends GetView<ConsoleController> {
                                   },
 
                                   onHoldStart: () {
-                                    controller.sendAction("CAMZOOMOUT", holdStart: true);
+                                    controller.sendAction(
+                                      "CAMZOOMOUT",
+                                      holdStart: true,
+                                    );
                                   },
 
                                   onHoldEnd: () {
-                                    controller.sendAction("CAMZOOMOUT", holdEnd: true);
+                                    controller.sendAction(
+                                      "CAMZOOMOUT",
+                                      holdEnd: true,
+                                    );
                                   },
                                 ),
                               ),
                             ],
                           ),
-
 
                           SizedBox(width: 20),
 
@@ -337,7 +348,7 @@ class ConsoleView extends GetView<ConsoleController> {
                     // ---------------- PEDALS ----------------
                     Positioned(
                       right: w * 0.03,
-                      bottom: h * 0.02,
+                      bottom: h * 0.05,
                       child: PedalWidget(controller, pedalH),
                     ),
                   ],

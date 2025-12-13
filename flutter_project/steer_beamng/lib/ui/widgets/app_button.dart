@@ -41,27 +41,27 @@ Widget appBtn({
       ),
       child: compact
           ? SvgPicture.asset(
-        asset,
-        width: iconSize,
-        height: iconSize,
-        colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
-      )
+              asset,
+              width: iconSize,
+              height: iconSize,
+              colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            )
           : Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(
-            asset,
-            width: iconSize,
-            height: iconSize,
-            colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          ),
-          SizedBox(height: fontSize * 0.3),
-          Text(
-            label,
-            style: TextStyle(color: Colors.white, fontSize: fontSize),
-          ),
-        ],
-      ),
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  asset,
+                  width: iconSize,
+                  height: iconSize,
+                  colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                ),
+                SizedBox(height: fontSize * 0.3),
+                Text(
+                  label,
+                  style: TextStyle(color: Colors.white, fontSize: fontSize),
+                ),
+              ],
+            ),
     ),
   );
 }

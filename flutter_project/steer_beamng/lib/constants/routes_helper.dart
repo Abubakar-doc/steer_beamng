@@ -1,6 +1,7 @@
 abstract class Routes {
   Routes._();
 
-  static const steering = '/steering';
+  static const splash = '/splash';
+  static const console = '/console';
   static const settings = '/settings';
 }

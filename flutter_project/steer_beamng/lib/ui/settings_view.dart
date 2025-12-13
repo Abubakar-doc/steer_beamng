@@ -41,8 +41,8 @@ class SettingsView extends StatelessWidget {
                   },
                   child: c.servers.isEmpty
                       ? ListView(
-                          children: const [
-                            Center(child: Text("Nothing to show.")),
+                          children: [
+                            SizedBox(height: Get.height * 0.50, child: Center(child: const Text("Nothing Found!"))),
                           ],
                         )
                       : ListView.separated(

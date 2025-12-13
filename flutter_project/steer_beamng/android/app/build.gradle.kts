@@ -48,4 +48,6 @@ flutter {
 }
 dependencies {
     implementation("com.microsoft.clarity:clarity:3.+")
+    implementation("com.google.firebase:firebase-crashlytics-ndk")
+    implementation("com.google.firebase:firebase-analytics")
 }

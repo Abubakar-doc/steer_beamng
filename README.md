@@ -4,19 +4,17 @@
 
 Built purely for **fun, learning, and experimentation**, this project explores how far a mobile device can replicate real steering hardware.
 
-Here’s the **clean updated section** with **GitHub Release first, Drive as fallback** 👇
-
 ---
 
 ## ⬇️ Downloads
 
 ### 📱 Android Controller App
 
-👉 **GitHub Releases**
-[https://github.com/Abubakar-doc/steer_beamng/releases](https://github.com/Abubakar-doc/steer_beamng/releases)
+👉 **GitHub Release (v1.0.0+1)**
+[https://github.com/Abubakar-doc/steer_beamng/releases/tag/android-v1.0.0%2B1](https://github.com/Abubakar-doc/steer_beamng/releases/tag/android-v1.0.0%2B1)
 
 👉 **Google Drive (backup)**
-[https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d](https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d)
+[https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d?usp=drive_link](https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d?usp=drive_link)
 
 ---
 

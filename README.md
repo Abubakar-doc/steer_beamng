@@ -4,19 +4,30 @@
 
 Built purely for **fun, learning, and experimentation**, this project explores how far a mobile device can replicate real steering hardware.
 
+Here’s the **clean updated section** with **GitHub Release first, Drive as fallback** 👇
+
 ---
 
 ## ⬇️ Downloads
 
 ### 📱 Android Controller App
 
-👉 [https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d](https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d)
+👉 **GitHub Releases**
+[https://github.com/Abubakar-doc/steer_beamng/releases](https://github.com/Abubakar-doc/steer_beamng/releases)
+
+👉 **Google Drive (backup)**
+[https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d](https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d)
+
+---
 
 ### 🖥️ Windows Helper App
 
-👉 [https://drive.google.com/drive/folders/1TUNcVbo4Q0VQBiAy46MAfK1aTaKlzSSX](https://drive.google.com/drive/folders/1TUNcVbo4Q0VQBiAy46MAfK1aTaKlzSSX)
+👉 **GitHub Release (v1.0.0)**
+[https://github.com/Abubakar-doc/steer_beamng/releases/tag/v1.0.0](https://github.com/Abubakar-doc/steer_beamng/releases/tag/v1.0.0)
 
----
+👉 **Google Drive (backup)**
+[https://drive.google.com/drive/folders/1TUNcVbo4Q0VQBiAy46MAfK1aTaKlzSSX](https://drive.google.com/drive/folders/1TUNcVbo4Q0VQBiAy46MAfK1aTaKlzSSX)
+
 
 <details>
 <summary><strong>🚀 Project Overview</strong></summary>

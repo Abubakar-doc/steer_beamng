@@ -1,94 +1,266 @@
 # 🎮 Steer BeamNG (Experimental)
 
-**Steer BeamNG** is an **experimental hobby project** built to simulate a **steering wheel for BeamNG.drive** using an **Android phone** — no physical wheel required.
+**Steer BeamNG** is an **experimental hobby project** that lets you control **BeamNG.drive** using an **Android phone as a steering wheel** — no physical wheel required.
 
-This project was created purely for **fun and learning**, to experience what driving in BeamNG feels like with steering-style controls without dedicated hardware.
-
----
-
-## 🚀 Project Overview
-
-Steer BeamNG works as a **two-part system**:
-
-### 1️⃣ Windows Helper App
-
-* Runs on **Windows**
-* Built using the **vJoy public library**
-* Creates a **virtual steering wheel device**
-* Receives input from the Android app
-* BeamNG detects it as a real steering wheel
-
-### 2️⃣ Android Controller App
-
-* Acts as the **steering controller**
-* Provides:
-
-  * Steering wheel
-  * Pedals
-  * Gearbox
-  * Camera controls
-* Sends real-time input to the Windows helper over network
-
-Together, this makes BeamNG believe a real steering wheel is connected.
-
----
-
-## 📦 Supported Platforms
-
-* ✅ **Android** (Controller App)
-* ✅ **Windows** (Helper App)
-
-> ⚠️ This is **experimental** and not a commercial product.
+Built purely for **fun, learning, and experimentation**, this project explores how far a mobile device can replicate real steering hardware.
 
 ---
 
 ## ⬇️ Downloads (Most Important)
 
-### 📱 Android App (Controller)
+### 📱 Android Controller App
 
-👉 **Download here**
-[https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d](https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d)
-
----
+👉 [https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d](https://drive.google.com/drive/folders/1v5a4XZ01TdK4u7N93i6R76977p9U6g6d)
 
 ### 🖥️ Windows Helper App
 
-👉 **Download here**
-[https://drive.google.com/drive/folders/1TUNcVbo4Q0VQBiAy46MAfK1aTaKlzSSX](https://drive.google.com/drive/folders/1TUNcVbo4Q0VQBiAy46MAfK1aTaKlzSSX)
+👉 [https://drive.google.com/drive/folders/1TUNcVbo4Q0VQBiAy46MAfK1aTaKlzSSX](https://drive.google.com/drive/folders/1TUNcVbo4Q0VQBiAy46MAfK1aTaKlzSSX)
 
 ---
 
-## 🛠️ How It Works (Simple Flow)
+<details>
+<summary><strong>🚀 Project Overview</strong></summary>
 
-1. Install **vJoy** on Windows
-2. Run the **Steer BeamNG Helper App** on PC
-3. Install the **Android controller app**
-4. Connect both on the same network
-5. Launch BeamNG
-6. BeamNG detects a **virtual steering wheel**
-7. Drive 🚗
+Steer BeamNG works as a **two-part system**:
 
----
+* **Windows Helper App**
 
-## 🎯 Purpose of This Project
+  * Creates a virtual steering wheel using **vJoy**
+* **Android Controller App**
 
-* Experiment with **virtual input devices**
-* Learn **Flutter + networking**
-* Explore **vJoy integration**
-* Experience BeamNG driving **without hardware**
+  * Sends real-time control input over network
+
+BeamNG detects the setup as a **real steering wheel**.
+
+</details>
 
 ---
 
-## ⚠️ Disclaimer
+<details>
+<summary><strong>🖥️ Windows Helper App</strong></summary>
 
-* This is a **personal hobby project**
-* No guarantees of stability or accuracy
-* Not affiliated with **BeamNG** or **vJoy**
+### Features
+
+* Runs on **Windows**
+* Built using **vJoy public library**
+* Creates a **virtual steering wheel device**
+* BeamNG detects it as real hardware
+
+### Installer
+
+The installer automatically:
+
+* Installs the Helper App
+* Installs **vJoy**
+* Configures **Windows Firewall**
+
+  * Allows UDP send/receive
+
+### Networking
+
+* **Protocol:** UDP
+* **Port:** 5000
+* Supports:
+
+  * Single Android user
+  * Multiple Android users simultaneously
+
+</details>
+
+---
+
+<details>
+<summary><strong>📱 Android Controller App (Detailed)</strong></summary>
+
+### Real-Time Network Status
+
+* Live **ping indicator (ms)**
+* Shows connection health instantly
+
+---
+
+### 🎛️ Vehicle Action Buttons
+
+* Fix vehicle
+* Flip vehicle
+* Gearbox mode change
+* Ignition
+* Fog light
+* Headlight
+* Flash
+* Left / Right indicator
+* Hazard light
+* Diff lock
+* ESC
+* 4WD
+* Camera zoom in / out
+* Camera change
+* Camera behind
+* Horn
+
+**Hold supported**
+
+* Fix
+* Ignition
+* Zoom in / out
+* Camera behind
+
+---
+
+### 🛞 Steering Wheel
+
+* Real steering-wheel behavior
+* Thumb-rotation based
+* Smooth & sensitive input
+* Springs back to center
+
+**Supported angles**
+
+* 270°
+* 360°
+* **450° (default)**
+* 540°
+* 720°
+* 900°
+
+**Special**
+
+* Horn in wheel center
+* Hold center → speedy flashes
+
+---
+
+### ⚙️ Gearbox System
+
+**Automatic**
+
+* P / R / N / D / S
+
+**Manual**
+
+* 5-speed
+* 6-speed
+* 7-speed
+* 8-speed
+
+**Interaction**
+
+* Grab knob anywhere inside bounds
+* Drag like a real shifter
+* Snaps to nearest gear on release
+* No need to look at the screen
+
+---
+
+### 🦶 Pedal System (3-in-1)
+
+Single pedal supports:
+
+* Accelerator
+* Brake / Reverse
+* Handbrake
+
+**Usage**
+
+* Drag up → accelerate
+* Drag down → brake
+* Left side → handbrake
+
+**Advanced**
+
+* Accelerator + handbrake
+* Brake + handbrake
+* Neutral + handbrake
+
+All with **one thumb**.
+
+---
+
+### 🎥 Camera Controls
+
+* Camera buttons
+* Free camera joystick
+* Double-tap joystick → camera reset
+
+---
+
+### ⭐ Favorites & Auto Connect
+
+* Favorite a Windows device
+* Auto-discover & auto-connect on app restart
+
+---
+
+### 🔄 Connectivity Handling
+
+* Automatic reconnect
+* Manual connect / disconnect from settings
+* Restart app if required
+
+</details>
+
+---
+
+<details>
+<summary><strong>🔧 Input & Game Binding</strong></summary>
+
+* All inputs map to **vJoy axes & buttons**
+* Users must bind controls inside **BeamNG**
+* Works like any real steering wheel
+* **vJoy Monitor** can be used to verify inputs
+
+</details>
+
+---
+
+<details>
+<summary><strong>🎯 Purpose of This Project</strong></summary>
+
+* Learn **Flutter & real-time networking**
+* Explore **virtual input devices**
+* Experiment with **vJoy**
+* Enjoy BeamNG without physical hardware
+
+</details>
+
+---
+
+<details>
+<summary><strong>🔮 Planned Next Update</strong></summary>
+
+* BeamNG → Mobile **telemetry**
+* Sync controller UI with game:
+
+  * Gear state
+  * Speed
+  * RPM
+  * Vehicle status
+
+</details>
+
+---
+
+<details>
+<summary><strong>⚠️ Disclaimer</strong></summary>
+
+* Personal hobby project
+* Experimental & unstable by nature
+* Not affiliated with BeamNG or vJoy
 * Use at your own risk
 
+</details>
+
 ---
 
-## 🤝 Contributions
+<details>
+<summary><strong>🤝 Contributions</strong></summary>
 
-This project is **open for learning and experimentation**.
-Feel free to explore, fork, or suggest improvements.
+Open for:
+
+* Learning
+* Experimentation
+* Improvements
+
+Feel free to fork or suggest ideas.
+
+</details>

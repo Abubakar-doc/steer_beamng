@@ -6,7 +6,7 @@ Built purely for **fun, learning, and experimentation**, this project explores h
 
 ---
 
-## ⬇️ Downloads (Most Important)
+## ⬇️ Downloads
 
 ### 📱 Android Controller App
 

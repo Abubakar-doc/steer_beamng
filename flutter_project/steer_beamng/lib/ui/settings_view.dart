@@ -16,15 +16,15 @@ class SettingsView extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: Get.back,
-                    child: const Icon(Icons.arrow_back),
-                  ),
-                  const SizedBox(width: 20),
-                  const Text("Settings", style: TextStyle(fontSize: 22)),
-                ],
+              GestureDetector(
+                onTap: Get.back,
+                child: Row(
+                  children: [
+                    Icon(Icons.arrow_back),
+                    const SizedBox(width: 20),
+                    const Text("Settings", style: TextStyle(fontSize: 22)),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -47,7 +47,8 @@ class SettingsView extends StatelessWidget {
                         )
                       : ListView.separated(
                           itemCount: c.servers.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
                           itemBuilder: (_, i) {
                             final s = c.servers[i];
 
@@ -57,7 +58,9 @@ class SettingsView extends StatelessWidget {
 
                             return Container(
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade900,
+                                color: isConnected
+                                    ? Colors.blue.withValues(alpha: 0.2)
+                                    : Colors.grey.shade900,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: ListTile(

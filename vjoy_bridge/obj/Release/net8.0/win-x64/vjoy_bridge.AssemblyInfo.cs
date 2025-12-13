@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Steer Beamng")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ee93256ab5bcaafb0fdec889e5110cec5929e192")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+24124e3df2abf64392e9c4dd286fc419138afaef")]
 [assembly: System.Reflection.AssemblyProductAttribute("Steer Beamng")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Steer Beamng")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
